@@ -17,7 +17,7 @@ if [[ $# -gt 0 ]]; then
 elif [[ -n "${COVERAGE_TARGET}" ]]; then
   COVERAGE_TARGETS=${COVERAGE_TARGET}
 else
-  COVERAGE_TARGETS=//...
+  COVERAGE_TARGETS=//hessian2/...
 fi
 
 

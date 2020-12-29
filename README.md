@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 
-**hessian2-codec** is a C++ library from Alibaba for hessian2 codec. It is a complete C++ implementation of [hessian2 spec](http://hessian.caucho.com/doc/hessian-serialization.html).Because it was originally intended to implement the Dubbo Filter of Envoy, it did not provide good support for serialization of user-defined types (there is only one way to implement user-defined types using ADL, but it is not very complete and does not support nested types well). 
+**hessian2-codec** is a C++ library from Alibaba for hessian2 codec. It is a complete C++ implementation of [hessian2 spec](http://hessian.caucho.com/doc/hessian-serialization.html). Because it was originally intended to implement the Dubbo Filter of Envoy, it did not provide good support for serialization of user-defined types (there is only one way to implement user-defined types using ADL, but it is not very complete and does not support nested types well). 
 At the moment it is simply deserializing content into some C++ intermediate types.
 
 ## Getting Started
@@ -13,7 +13,7 @@ At the moment it is simply deserializing content into some C++ intermediate type
 
 1. To download and install Bazel (and any of its dependencies), consult the [Bazel Installation Guide](https://docs.bazel.build/versions/master/install.html).
 2. Refer to [Supported Platforms](#supported-platforms) installation related compiler.
-3. Use hessian2-codec. see the demo directory for details
+3. Use hessian2-codec, see the demo directory for details.
 
 ```shell
 $ cd demo
@@ -254,8 +254,8 @@ following notable projects:
 
 ## Related Open Source Projects
 
-* [dubbo-go-hessian2](https://github.com/apache/dubbo-go-hessian2) is a GO language implementation of the Hessian2 serializer
-* [dubbo-hessian-lite](https://github.com/apache/dubbo-hessian-lite) is a java language implementation of the Hessian2 serializer
+* [dubbo-go-hessian2](https://github.com/apache/dubbo-go-hessian2) is a GO language implementation of the Hessian2 serializer.
+* [dubbo-hessian-lite](https://github.com/apache/dubbo-hessian-lite) is a Java language implementation of the Hessian2 serializer.
 
 
 ## Contributing
@@ -269,4 +269,4 @@ Happy testing!
 hessian2-codec is distributed under Apache License 2.0.
 
 ## Acknowledgements
-* [test_hessian](https://github.com/apache/dubbo-go-hessian2/tree/master/test_hessian) A comprehensive hessian2 testing framework.
+* [test_hessian](https://github.com/apache/dubbo-go-hessian2/tree/master/test_hessian) A comprehensive Hessian2 testing framework.
