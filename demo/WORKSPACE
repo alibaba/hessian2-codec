@@ -1,0 +1,13 @@
+workspace(name = "com_github_demo")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+  name = "com_alibaba_hessian2_codec",
+  commit = "8ae75394ade48e5d65626a465d359df0617c1f5e",
+  remote = "http://gitlab.alibaba-inc.com/AliMesh/hessian2-codec.git"
+)
+
+load("@com_alibaba_hessian2_codec//bazel:third_party_repositories.bzl", "load_third_party_repositories")
+load_third_party_repositories()
