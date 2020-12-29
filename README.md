@@ -1,6 +1,6 @@
 # hessian2-codec
 
-[![Build Status](https://travis-ci.org/alibaba/hessian2-codec.svg?branch=master)](https://travis-ci.org/alibaba/hessian2-codec)
+![CI](https://github.com/alibaba/hessian2-codec/workflows/CI/badge.svg?branch=main)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 
