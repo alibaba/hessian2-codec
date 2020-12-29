@@ -42,9 +42,14 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}/bin/"
           mv bazelisk-linux-amd64 "${GITHUB_WORKSPACE}/bin/bazel"
           chmod +x "${GITHUB_WORKSPACE}/bin/bazel"
+      
       - name: build
         run: |
           "${GITHUB_WORKSPACE}/bin/bazel" build //hessian2/...
+      
+      - name: demo-build
+        run: |
+          cd demo && "${GITHUB_WORKSPACE}/bin/bazel" build //...
 
       - name: test
         run: |
