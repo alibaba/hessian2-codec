@@ -4,28 +4,28 @@
 #include "absl/strings/string_view.h"
 #include "hessian2/codec.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 namespace {
 constexpr size_t STRING_CHUNK_SIZE = 32768;
 }
 
-bool DecodeStringWithReader(std::string &out, Reader &reader);
-bool FinalReadUtf8String(std::string &output, Reader &reader, size_t length);
-bool ReadChunkString(std::string &output, Reader &reader, size_t length,
+bool decodeStringWithReader(std::string &out, Reader &reader);
+bool finalReadUtf8String(std::string &output, Reader &reader, size_t length);
+bool readChunkString(std::string &output, Reader &reader, size_t length,
                      bool is_last_chunk);
 
-int64_t GetUtf8StringLength(const absl::string_view &out,
+int64_t getUtf8StringLength(const absl::string_view &out,
                             std::vector<uint64_t> &per_chunk_raw_size);
 
 // TODO(tianqian.zyf): Do I need to check the UTF-8 validity?
 // Ref: https://www.cl.cam.ac.uk/~mgk25/ucs/utf8_check.c
-bool FinalReadUtf8String(std::string &output, Reader &reader, size_t length) {
+bool finalReadUtf8String(std::string &output, Reader &reader, size_t length) {
   // The length length refers to the length of utF8 characters,
   // and utF8 can be represented by up to 4 bytes, so it is length * 4
   output.reserve(length * 4);
   while (length > 0) {
-    auto ch1 = reader.Read<uint8_t>();
+    auto ch1 = reader.read<uint8_t>();
     if (!ch1.first) {
       return false;
     }
@@ -36,7 +36,7 @@ bool FinalReadUtf8String(std::string &output, Reader &reader, size_t length) {
     }
 
     output.push_back(ch1.second);
-    auto ch2 = reader.Read<uint8_t>();
+    auto ch2 = reader.read<uint8_t>();
     if (!ch2.first) {
       return false;
     }
@@ -46,7 +46,7 @@ bool FinalReadUtf8String(std::string &output, Reader &reader, size_t length) {
       continue;
     }
 
-    auto ch3 = reader.Read<uint8_t>();
+    auto ch3 = reader.read<uint8_t>();
     if (!ch3.first) {
       return false;
     }
@@ -56,7 +56,7 @@ bool FinalReadUtf8String(std::string &output, Reader &reader, size_t length) {
       continue;
     }
 
-    auto ch4 = reader.Read<uint8_t>();
+    auto ch4 = reader.read<uint8_t>();
     if (!ch4.first) {
       return false;
     }
@@ -71,9 +71,9 @@ bool FinalReadUtf8String(std::string &output, Reader &reader, size_t length) {
   return true;
 }
 
-bool ReadChunkString(std::string &output, Reader &reader, size_t length,
+bool readChunkString(std::string &output, Reader &reader, size_t length,
                      bool is_last_chunk) {
-  auto ret = FinalReadUtf8String(output, reader, length);
+  auto ret = finalReadUtf8String(output, reader, length);
   if (!ret) {
     return false;
   }
@@ -82,21 +82,21 @@ bool ReadChunkString(std::string &output, Reader &reader, size_t length,
     return true;
   }
 
-  return DecodeStringWithReader(output, reader);
+  return decodeStringWithReader(output, reader);
 }
 
 template <>
 std::unique_ptr<std::string> Decoder::decode() {
   auto out = std::make_unique<std::string>();
-  if (!DecodeStringWithReader(*out.get(), *reader_.get())) {
+  if (!decodeStringWithReader(*out.get(), *reader_.get())) {
     return nullptr;
   }
   return out;
 }
 
-bool DecodeStringWithReader(std::string &out, Reader &reader) {
+bool decodeStringWithReader(std::string &out, Reader &reader) {
   size_t delta_length = 0;
-  auto ret = reader.Read<uint8_t>();
+  auto ret = reader.read<uint8_t>();
   if (!ret.first) {
     return false;
   }
@@ -135,7 +135,7 @@ bool DecodeStringWithReader(std::string &out, Reader &reader) {
     case 0x1d:
     case 0x1e:
     case 0x1f: {
-      return ReadChunkString(out, reader, code - 0x00, true);
+      return readChunkString(out, reader, code - 0x00, true);
     }
 
     // ::= [x30-x33] <utf8-data> # string of length
@@ -143,29 +143,29 @@ bool DecodeStringWithReader(std::string &out, Reader &reader) {
     case 0x31:
     case 0x32:
     case 0x33: {
-      auto res = reader.Read<uint8_t>();
+      auto res = reader.read<uint8_t>();
       if (!res.first) {
         return false;
       }
       delta_length = (code - 0x30) * 256 + res.second;
-      return ReadChunkString(out, reader, delta_length, true);
+      return readChunkString(out, reader, delta_length, true);
     }
 
     case 0x53:  // 0x53 is 'S', 'S' b1 b0 <utf8-data>
     {
-      auto res = reader.ReadBE<uint16_t>();
+      auto res = reader.readBE<uint16_t>();
       if (!res.first) {
         return false;
       }
-      return ReadChunkString(out, reader, res.second, true);
+      return readChunkString(out, reader, res.second, true);
     }
     case 0x52:  // 0x52 b1 b0 <utf8-data>
     {
-      auto res = reader.ReadBE<uint16_t>();
+      auto res = reader.readBE<uint16_t>();
       if (!res.first) {
         return false;
       }
-      return ReadChunkString(out, reader, res.second, false);
+      return readChunkString(out, reader, res.second, false);
     }
   }
   return false;
@@ -179,7 +179,7 @@ bool DecodeStringWithReader(std::string &out, Reader &reader) {
 template <>
 bool Encoder::encode(const absl::string_view &data) {
   std::vector<uint64_t> raw_chunk_size;
-  int64_t length = GetUtf8StringLength(data, raw_chunk_size);
+  int64_t length = getUtf8StringLength(data, raw_chunk_size);
   if (length == -1) {
     return false;
   }
@@ -189,25 +189,25 @@ bool Encoder::encode(const absl::string_view &data) {
   int pos = 0;
   while (static_cast<uint64_t>(length) > STRING_CHUNK_SIZE) {
     step_length = STRING_CHUNK_SIZE;
-    writer_->WriteByte(0x52);
-    writer_->WriteBE<uint16_t>(step_length);
+    writer_->writeByte(0x52);
+    writer_->writeBE<uint16_t>(step_length);
     length -= step_length;
     auto raw_offset = raw_chunk_size[pos++];
-    writer_->RawWrite(absl::string_view(data.begin() + strOffset, raw_offset));
+    writer_->rawWrite(absl::string_view(data.begin() + strOffset, raw_offset));
     strOffset += raw_offset;
   }
 
   if (length == 0) {
     // x00  # "", empty string
-    writer_->WriteByte(0x00);
+    writer_->writeByte(0x00);
     return true;
   }
 
   if (length <= 31) {
     // [x00-x1f] <utf8-data>
     // Compact: short strings
-    writer_->WriteByte(length);
-    writer_->RawWrite(
+    writer_->writeByte(length);
+    writer_->rawWrite(
         absl::string_view(data.begin() + strOffset, data.size() - strOffset));
     return true;
   }
@@ -216,15 +216,15 @@ bool Encoder::encode(const absl::string_view &data) {
   if (length <= 1023) {
     uint8_t code = length / 256;
     uint8_t remain = length % 256;
-    writer_->WriteByte(0x30 + code);
-    writer_->WriteByte(remain);
-    writer_->RawWrite(
+    writer_->writeByte(0x30 + code);
+    writer_->writeByte(remain);
+    writer_->rawWrite(
         absl::string_view(data.begin() + strOffset, data.size() - strOffset));
     return true;
   }
-  writer_->WriteByte(0x53);
-  writer_->WriteBE<uint16_t>(length);
-  writer_->RawWrite(
+  writer_->writeByte(0x53);
+  writer_->writeBE<uint16_t>(length);
+  writer_->rawWrite(
       absl::string_view(data.begin() + strOffset, data.size() - strOffset));
   return true;
 }
@@ -234,7 +234,7 @@ bool Encoder::encode(const std::string &data) {
   return encode<absl::string_view>(absl::string_view(data));
 }
 
-int64_t GetUtf8StringLength(const absl::string_view &out,
+int64_t getUtf8StringLength(const absl::string_view &out,
                             std::vector<uint64_t> &per_chunk_raw_size) {
   size_t utf_len = 0;
   size_t i = 0;
@@ -291,4 +291,4 @@ int64_t GetUtf8StringLength(const absl::string_view &out,
   return utf_len;
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

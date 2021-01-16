@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "hessian2/test_framework/process.h"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 TEST(ProcessTest, echo) {
   Process pro;
@@ -17,7 +17,7 @@ TEST(ProcessTest, pipe) {
 TEST(ProcessTest, PipeWriteMode) {
   Process pro;
   EXPECT_TRUE(pro.RunWithWriteMode("read"));
-  EXPECT_TRUE(pro.Write(std::string("test")));
+  EXPECT_TRUE(pro.write(std::string("test")));
 }
 
 TEST(ProcessTest, Binary) {
@@ -29,4 +29,4 @@ TEST(ProcessTest, Binary) {
   expect.push_back(0x20);
   EXPECT_EQ(pro.Output(), expect);
 }
-}  // namespace hessian2
+}  // namespace Hessian2

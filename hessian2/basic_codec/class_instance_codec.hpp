@@ -9,7 +9,7 @@
 #include "hessian2/basic_codec/string_codec.hpp"
 #include "hessian2/basic_codec/type_ref_codec.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 // class-def  ::= 'C' string int string*
 // object     ::= 'O' int value*
@@ -19,7 +19,7 @@ std::unique_ptr<ClassInstanceObject> Decoder::decode() {
   Object::ClassInstance instance;
   auto result = std::make_unique<ClassInstanceObject>();
   values_ref_.push_back(result.get());
-  auto ret = reader_->Peek<uint8_t>();
+  auto ret = reader_->peek<uint8_t>();
 
   if (!ret.first) {
     return nullptr;
@@ -54,7 +54,7 @@ std::unique_ptr<ClassInstanceObject> Decoder::decode() {
 template <>
 bool Encoder::encode(const ClassInstanceObject& value) {
   values_ref_.emplace(&value, values_ref_.size());
-  auto class_instance = value.to_class_instance();
+  auto class_instance = value.toClassInstance();
   ABSL_ASSERT(class_instance.has_value());
   auto class_instance_value = class_instance.value();
   ABSL_ASSERT(class_instance_value != nullptr);
@@ -66,4 +66,4 @@ bool Encoder::encode(const ClassInstanceObject& value) {
   return true;
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

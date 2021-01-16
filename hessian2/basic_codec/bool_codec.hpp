@@ -8,13 +8,13 @@
 // Date
 /////////////////////////////////////////
 
-namespace hessian2 {
+namespace Hessian2 {
 // # time in UTC encoded as 64-bit long milliseconds since epoch
 // ::= x4a b7 b6 b5 b4 b3 b2 b1 b0
 // ::= x4b b3 b2 b1 b0       # minutes since epoch
 template <>
 std::unique_ptr<bool> Decoder::decode() {
-  uint8_t code = reader_->Read<uint8_t>().second;
+  uint8_t code = reader_->read<uint8_t>().second;
   if (code == 0x46) {
     return std::make_unique<bool>(false);
   }
@@ -32,12 +32,12 @@ std::unique_ptr<bool> Decoder::decode() {
 template <>
 bool Encoder::encode(const bool &value) {
   if (value) {
-    writer_->WriteByte(0x54);
+    writer_->writeByte(0x54);
   } else {
-    writer_->WriteByte(0x46);
+    writer_->writeByte(0x46);
   }
 
   return true;
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

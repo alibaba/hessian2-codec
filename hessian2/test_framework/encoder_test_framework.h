@@ -20,7 +20,7 @@ std::string GenerateTestCaseFullName(const std::string& testcase_name,
 }
 }  // namespace
 
-namespace hessian2 {
+namespace Hessian2 {
 class TestEncoderFramework : public testing::Test {
  public:
   template <typename T>
@@ -34,9 +34,9 @@ class TestEncoderFramework : public testing::Test {
       return false;
     }
     std::string out;
-    hessian2::Encoder encoder(out);
+    Hessian2::Encoder encoder(out);
     encoder.encode<T>(input);
-    EXPECT_TRUE(pro.Write(out));
+    EXPECT_TRUE(pro.write(out));
     auto err = err_tmp_file.GetFileContent();
     EXPECT_EQ(err, std::string());
 
@@ -46,4 +46,4 @@ class TestEncoderFramework : public testing::Test {
   }
 };
 
-}  // namespace hessian2
+}  // namespace Hessian2

@@ -6,9 +6,9 @@
 int main() {
   {
     std::string out;
-    ::hessian2::Encoder encode(out);
+    ::Hessian2::Encoder encode(out);
     encode.encode<std::string>("test string");
-    ::hessian2::Decoder decode(out);
+    ::Hessian2::Decoder decode(out);
     auto ret = decode.decode<std::string>();
     if (ret) {
       std::cout << *ret << std::endl;
@@ -18,9 +18,9 @@ int main() {
   }
   {
     std::string out;
-    ::hessian2::Encoder encode(out);
+    ::Hessian2::Encoder encode(out);
     encode.encode<int64_t>(100);
-    ::hessian2::Decoder decode(out);
+    ::Hessian2::Decoder decode(out);
     auto ret = decode.decode<int64_t>();
     if (ret) {
       std::cout << *ret << std::endl;

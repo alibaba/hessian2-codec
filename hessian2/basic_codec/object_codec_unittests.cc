@@ -5,13 +5,13 @@
 #include "hessian2/basic_codec/object_codec.hpp"
 #include "hessian2/object.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class ObjectCodecTest : public testing::Test {
  public:
   template <typename T>
   void decodeSucc(absl::string_view data, const T &out, size_t size) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<T>();
     EXPECT_EQ(out, *output);
     EXPECT_EQ(size, decoder.offset());
@@ -19,7 +19,7 @@ class ObjectCodecTest : public testing::Test {
 
   template <typename T>
   void decodeFail(absl::string_view data) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<T>();
     EXPECT_EQ(nullptr, output);
   }
@@ -27,7 +27,7 @@ class ObjectCodecTest : public testing::Test {
   template <typename T>
   void encodeSucc(const T &data, size_t size, std::string expected_data = "") {
     std::string res;
-    hessian2::Encoder encoder(res);
+    Hessian2::Encoder encoder(res);
     encoder.encode<T>(data);
     if (!expected_data.empty()) {
       EXPECT_EQ(expected_data, res);
@@ -301,4 +301,4 @@ TEST_F(ObjectCodecTest, encode) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

@@ -2,7 +2,7 @@
 
 #include "fmt/format.h"
 #include <iostream>
-namespace hessian2 {
+namespace Hessian2 {
 
 #ifdef HESSIAN_LOG_OUTPUT
 #define HESSIAN_LOG(level, args...)                                       \
@@ -13,4 +13,4 @@ namespace hessian2 {
 #define HESSIAN_LOG(level, args...)
 #endif
 
-}  // namespace hessian2
+}  // namespace Hessian2

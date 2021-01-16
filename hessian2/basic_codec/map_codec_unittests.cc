@@ -8,7 +8,7 @@
 #include "hessian2/test_framework/decoder_test_framework.h"
 #include "hessian2/test_framework/encoder_test_framework.h"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 TEST_F(TestDecoderFramework, DecoderJavaTestCaseForMap) {
   {
@@ -166,4 +166,4 @@ TEST_F(TestEncoderFramework, EncoderJavaTestCaseForMap) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

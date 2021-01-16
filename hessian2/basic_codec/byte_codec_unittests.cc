@@ -6,12 +6,12 @@
 #include "hessian2/test_framework/decoder_test_framework.h"
 #include "hessian2/test_framework/encoder_test_framework.h"
 
-namespace hessian2 {
+namespace Hessian2 {
 class ByteCodecTest : public testing::Test {
  public:
   void decodeSucc(absl::string_view data, std::vector<uint8_t> out,
                   size_t size) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     std::unique_ptr<std::vector<uint8_t>> output =
         decoder.decode<std::vector<uint8_t>>();
     EXPECT_EQ(out.size(), output->size());
@@ -20,7 +20,7 @@ class ByteCodecTest : public testing::Test {
   }
 
   void decodeFail(absl::string_view data) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<std::vector<uint8_t>>();
     EXPECT_EQ(nullptr, output);
   }
@@ -28,7 +28,7 @@ class ByteCodecTest : public testing::Test {
   void encodeSucc(std::vector<uint8_t> data, size_t size,
                   std::string expected_data = "") {
     std::string res;
-    hessian2::Encoder encoder(res);
+    Hessian2::Encoder encoder(res);
     encoder.encode<std::vector<uint8_t>>(data);
     if (!expected_data.empty()) {
       EXPECT_EQ(expected_data, res);
@@ -241,4 +241,4 @@ TEST_F(ByteCodecTest, encode) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2
