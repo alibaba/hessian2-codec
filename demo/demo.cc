@@ -5,9 +5,9 @@
 
 int main() {
   std::string out;
-  ::Hessian2::Encoder encode(out);
+  ::hessian2::Encoder encode(out);
   encode.encode<std::string>("test string");
-  ::Hessian2::Decoder decode(out);
+  ::hessian2::Decoder decode(out);
   auto ret = decode.decode<std::string>();
   if (ret) {
     std::cout << *ret << std::endl;
