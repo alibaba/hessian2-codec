@@ -13,7 +13,7 @@ std::string GenerateTestCaseFullName(const std::string& testcase_name) {
 }
 }  // namespace
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class TestDecoderFramework : public testing::Test {
  public:
@@ -25,7 +25,7 @@ class TestDecoderFramework : public testing::Test {
       return false;
     }
     auto output = pro.Output();
-    hessian2::Decoder decoder(output);
+    Hessian2::Decoder decoder(output);
     auto decode_output = decoder.decode<T>();
     // For RefObject, we only need to compare whether the referenced object
     // pointer is the same, not whether the actual object content of the
@@ -40,4 +40,4 @@ class TestDecoderFramework : public testing::Test {
   }
 };
 
-}  // namespace hessian2
+}  // namespace Hessian2

@@ -5,12 +5,12 @@
 #include "hessian2/basic_codec/type_ref_codec.hpp"
 #include "hessian2/object.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 TEST(TypeRefCodecTest, Decode) {
   {
     std::string data{0x53, 0x00, 0x05, 'h', 'e', 'l', 'l', 'o'};
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     Object::TypeRef ref("hello");
     auto output = decoder.decode<Object::TypeRef>();
     EXPECT_EQ(ref, *output);
@@ -24,7 +24,7 @@ TEST(TypeRefCodecTest, Decode) {
     std::string data2(reinterpret_cast<char *>(buf), 1);
     data.append(data2);
 
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     Object::TypeRef ref("hello");
     auto output = decoder.decode<Object::TypeRef>();
     EXPECT_EQ(ref, *output);
@@ -44,7 +44,7 @@ TEST(TypeRefCodecTest, encode) {
     expect_data.append(data2);
 
     std::string output;
-    hessian2::Encoder encoder(output);
+    Hessian2::Encoder encoder(output);
     Object::TypeRef ref("hello");
     encoder.encode<Object::TypeRef>(ref);
     encoder.encode<Object::TypeRef>(ref);
@@ -53,4 +53,4 @@ TEST(TypeRefCodecTest, encode) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

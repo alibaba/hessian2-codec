@@ -5,7 +5,7 @@
 #include "hessian2/basic_codec/object_codec.hpp"
 #include "hessian2/basic_codec/type_ref_codec.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 // # typed list/vector
 // ::= x55 type value* 'Z'   # variable-length list
@@ -19,7 +19,7 @@ std::unique_ptr<TypedListObject> Decoder::decode() {
   auto result = std::make_unique<TypedListObject>();
   values_ref_.push_back(result.get());
 
-  auto ret = reader_->Read<uint8_t>();
+  auto ret = reader_->read<uint8_t>();
   if (!ret.first) {
     return nullptr;
   }
@@ -38,7 +38,7 @@ std::unique_ptr<TypedListObject> Decoder::decode() {
   };
 
   auto ReadObjectUntilEnd = [&]() -> bool {
-    auto ret = reader_->Peek<uint8_t>();
+    auto ret = reader_->peek<uint8_t>();
     if (!ret.first) {
       return false;
     }
@@ -49,14 +49,14 @@ std::unique_ptr<TypedListObject> Decoder::decode() {
         return false;
       }
       obj_list.values_.emplace_back(std::move(o));
-      ret = reader_->Peek<uint8_t>();
+      ret = reader_->peek<uint8_t>();
       if (!ret.first) {
         return false;
       }
     }
 
     // Skip last 'Z'
-    reader_->Read<uint8_t>();
+    reader_->read<uint8_t>();
     return true;
   };
 
@@ -116,7 +116,7 @@ std::unique_ptr<UntypedListObject> Decoder::decode() {
   auto result = std::make_unique<UntypedListObject>();
   values_ref_.push_back(result.get());
 
-  auto ret = reader_->Read<uint8_t>();
+  auto ret = reader_->read<uint8_t>();
   if (!ret.first) {
     return nullptr;
   }
@@ -135,7 +135,7 @@ std::unique_ptr<UntypedListObject> Decoder::decode() {
   };
 
   auto ReadObjectUntilEnd = [&]() -> bool {
-    auto ret = reader_->Peek<uint8_t>();
+    auto ret = reader_->peek<uint8_t>();
     if (!ret.first) {
       return false;
     }
@@ -146,13 +146,13 @@ std::unique_ptr<UntypedListObject> Decoder::decode() {
         return false;
       }
       obj_list.emplace_back(std::move(o));
-      ret = reader_->Peek<uint8_t>();
+      ret = reader_->peek<uint8_t>();
       if (!ret.first) {
         return false;
       }
     }
     // Skip last 'Z'
-    reader_->Read<uint8_t>();
+    reader_->read<uint8_t>();
     return true;
   };
 
@@ -194,7 +194,7 @@ std::unique_ptr<UntypedListObject> Decoder::decode() {
 template <>
 bool Encoder::encode(const TypedListObject& value) {
   values_ref_.emplace(&value, values_ref_.size());
-  auto typed_list = value.to_typed_list();
+  auto typed_list = value.toTypedList();
   ABSL_ASSERT(typed_list.has_value());
   auto typed_list_value = typed_list.value();
   ABSL_ASSERT(typed_list_value != nullptr);
@@ -203,9 +203,9 @@ bool Encoder::encode(const TypedListObject& value) {
   auto len = typed_list_value->values_.size();
 
   if (len <= 7) {
-    writer_->WriteByte(static_cast<uint8_t>(0x70 + len));
+    writer_->writeByte(static_cast<uint8_t>(0x70 + len));
   } else {
-    writer_->WriteByte('V');
+    writer_->writeByte('V');
   }
 
   encode<Object::TypeRef>(type_ref);
@@ -223,7 +223,7 @@ bool Encoder::encode(const TypedListObject& value) {
 template <>
 bool Encoder::encode(const UntypedListObject& value) {
   values_ref_.emplace(&value, values_ref_.size());
-  auto untyped_list = value.to_untyped_list();
+  auto untyped_list = value.toUntypedList();
   ABSL_ASSERT(untyped_list.has_value());
   auto untyped_list_value = untyped_list.value();
   ABSL_ASSERT(untyped_list_value != nullptr);
@@ -231,9 +231,9 @@ bool Encoder::encode(const UntypedListObject& value) {
   auto len = untyped_list_value->size();
 
   if (len <= 7) {
-    writer_->WriteByte(static_cast<uint8_t>(0x78 + len));
+    writer_->writeByte(static_cast<uint8_t>(0x78 + len));
   } else {
-    writer_->WriteByte(static_cast<uint8_t>(0x58));
+    writer_->writeByte(static_cast<uint8_t>(0x58));
     encode<int32_t>(len);
   }
 
@@ -244,4 +244,4 @@ bool Encoder::encode(const UntypedListObject& value) {
   return true;
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

@@ -14,34 +14,34 @@
 #include "hessian2/string_reader.hpp"
 #include "hessian2/string_writer.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class Decoder;
 class Encoder;
 
 namespace detail {
-struct from_hessian_fn {
+struct FromHessianFn {
   template <typename CustomType>
   void operator()(CustomType& j, Decoder& c) const noexcept {
-    return from_hessian(j, c);
+    return fromHessian(j, c);
   }
 };
 
-struct to_hessian_fn {
+struct ToHessianFn {
   template <typename CustomType>
   bool operator()(const CustomType& j, Encoder& e) const noexcept {
-    return to_hessian(j, e);
+    return toHessian(j, e);
   }
 };
 }  // namespace detail
 
-/// namespace to hold default `from_hessian` function
+/// namespace to hold default `fromHessian`/`toHessian` function
 /// to see why this is required:
 /// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4381.html
 namespace {
-constexpr const auto& from_hessian =
-    static_const<detail::from_hessian_fn>::value;
-constexpr const auto& to_hessian = static_const<detail::to_hessian_fn>::value;
+// Global function objects.
+constexpr const auto& FromHessian = static_const<detail::FromHessianFn>::value;
+constexpr const auto& ToHessian = static_const<detail::ToHessianFn>::value;
 }  // namespace
 
 class Decoder {
@@ -60,11 +60,11 @@ class Decoder {
   template <typename T>
   std::unique_ptr<T> decode() {
     auto t = std::make_unique<T>();
-    hessian2::from_hessian(*t, *this);
+    Hessian2::FromHessian(*t, *this);
     return t;
   }
 
-  uint64_t offset() { return reader_->Offset(); }
+  uint64_t offset() { return reader_->offset(); }
   uint16_t getTypeRefSize() { return types_ref_.size(); }
   uint16_t getDefRefSize() { return def_ref_.size(); }
   ErrorCode errorCode() const { return error_code_; }
@@ -116,7 +116,7 @@ class Encoder {
   Encoder(WriterPtr&& writer) : writer_(std::move(writer)) {}
   template <typename T>
   bool encode(const T& o) {
-    return hessian2::to_hessian(o, *this);
+    return Hessian2::ToHessian(o, *this);
   }
 
   // References are not currently supported
@@ -194,4 +194,4 @@ std::unique_ptr<Object> Decoder::decode();
 template <>
 bool Encoder::encode(const Object&);
 
-}  // namespace hessian2
+}  // namespace Hessian2

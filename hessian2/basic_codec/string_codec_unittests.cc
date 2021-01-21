@@ -48,18 +48,18 @@ std::string GenerateComplexString() {
 
 }  // namespace
 
-namespace hessian2 {
+namespace Hessian2 {
 class StringCodecTest : public testing::Test {
  public:
   void decodeSucc(absl::string_view data, std::string out, size_t size) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<std::string>();
     EXPECT_EQ(out, *output);
     EXPECT_EQ(size, decoder.offset());
   }
 
   void decodeFail(absl::string_view data) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<std::string>();
     EXPECT_EQ(nullptr, output);
   }
@@ -67,7 +67,7 @@ class StringCodecTest : public testing::Test {
   void encodeSucc(std::string data, size_t size,
                   std::string expected_data = "") {
     std::string res;
-    hessian2::Encoder encoder(res);
+    Hessian2::Encoder encoder(res);
     encoder.encode<std::string>(data);
     if (!expected_data.empty()) {
       EXPECT_EQ(expected_data, res);
@@ -288,4 +288,4 @@ TEST_F(StringCodecTest, Encode) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

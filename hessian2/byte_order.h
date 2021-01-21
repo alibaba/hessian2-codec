@@ -46,7 +46,7 @@
 #include <endian.h>
 #endif
 
-namespace hessian2 {
+namespace Hessian2 {
 enum class ByteOrderType { Host, LittleEndian, BigEndian };
 
 template <ByteOrderType, typename Integral, size_t = sizeof(Integral)>
@@ -220,4 +220,4 @@ struct ByteOrderConverter<ByteOrderType::BigEndian, T, sizeof(uint64_t)> {
   }
 };
 
-}  // namespace hessian2
+}  // namespace Hessian2

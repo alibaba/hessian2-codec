@@ -8,18 +8,18 @@
 #include "hessian2/test_framework/decoder_test_framework.h"
 #include "hessian2/test_framework/encoder_test_framework.h"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class ListCodecTest : public testing::Test {
  public:
   void decodeTypeListFail(absl::string_view data) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<TypedListObject>();
     EXPECT_EQ(nullptr, output);
   }
 
   void decodeUntypedListFail(absl::string_view data) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<UntypedListObject>();
     EXPECT_EQ(nullptr, output);
   }
@@ -665,4 +665,4 @@ TEST_F(TestEncoderFramework, EncoderJavaTestCaseForList) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

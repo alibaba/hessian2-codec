@@ -48,10 +48,10 @@ char (&ArraySizeHelper(T (&array)[N]))[N];
 //
 //   std::unique_ptr<MyType> my_var = ...;
 //   if (TakeOwnership(my_var.get()) == SUCCESS)
-//     ignore_result(my_var.release());
+//     ignoreResult(my_var.release());
 //
 template <typename T>
-inline void ignore_result(const T&) {}
+inline void ignoreResult(const T&) {}
 
 template <typename T>
-inline void ignore_unused(T&&) {}
+inline void ignoreUnused(T&&) {}

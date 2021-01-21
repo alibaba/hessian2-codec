@@ -4,8 +4,8 @@
 #include <sstream>
 #include <string>
 
-namespace hessian2 {
-class utils {
+namespace Hessian2 {
+class Utils {
  public:
   static char* allocStringBuffer(std::string* str, size_t length) {
     str->reserve(length);
@@ -41,4 +41,4 @@ struct static_const {
 
 template <typename T>
 constexpr T static_const<T>::value;
-}  // namespace hessian2
+}  // namespace Hessian2

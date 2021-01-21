@@ -5,7 +5,7 @@
 #include "hessian2/basic_codec/ref_object_codec.hpp"
 #include "hessian2/object.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 TEST(RefObjectCodecTest, Decode) {
   {
@@ -19,4 +19,4 @@ TEST(RefObjectCodecTest, encode) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

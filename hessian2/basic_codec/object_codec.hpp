@@ -17,10 +17,10 @@
 #include "hessian2/basic_codec/string_codec.hpp"
 #include "hessian2/basic_codec/type_ref_codec.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 template <>
 std::unique_ptr<NullObject> Decoder::decode() {
-  auto ret = reader_->Read<uint8_t>();
+  auto ret = reader_->read<uint8_t>();
   if (!ret.first) {
     return nullptr;
   }
@@ -31,7 +31,7 @@ std::unique_ptr<NullObject> Decoder::decode() {
 
 template <>
 bool Encoder::encode(const NullObject&) {
-  writer_->WriteByte('N');
+  writer_->writeByte('N');
   return true;
 }
 
@@ -85,7 +85,7 @@ xf0 - xff    # two-octet compact long (-x800 to x7ff, xf8 is 0)
 
 template <>
 std::unique_ptr<Object> Decoder::decode() {
-  auto ret = reader_->Peek<uint8_t>();
+  auto ret = reader_->peek<uint8_t>();
   if (!ret.first) {
     return nullptr;
   }
@@ -238,22 +238,22 @@ template <>
 bool Encoder::encode(const Object& value) {
   switch (value.type()) {
     case Object::Type::Binary: {
-      return encode<std::vector<uint8_t>>(*value.to_binary().value());
+      return encode<std::vector<uint8_t>>(*value.toBinary().value());
     }
     case Object::Type::Boolean: {
-      return encode<bool>(value.to_boolean().value());
+      return encode<bool>(value.toBoolean().value());
     }
     case Object::Type::Date: {
-      return encode<std::chrono::milliseconds>(value.to_date().value());
+      return encode<std::chrono::milliseconds>(value.toDate().value());
     }
     case Object::Type::Double: {
-      return encode<double>(value.to_double().value());
+      return encode<double>(value.toDouble().value());
     }
     case Object::Type::Integer: {
-      return encode<int32_t>(value.to_integer().value());
+      return encode<int32_t>(value.toInteger().value());
     }
     case Object::Type::Long: {
-      return encode<int64_t>(value.to_long().value());
+      return encode<int64_t>(value.toLong().value());
     }
     case Object::Type::Null: {
       NullObject o;
@@ -263,7 +263,7 @@ bool Encoder::encode(const Object& value) {
       return encode<RefObject>(*dynamic_cast<const RefObject*>(&value));
     }
     case Object::Type::String: {
-      return encode<std::string>(*value.to_string().value());
+      return encode<std::string>(*value.toString().value());
     }
     case Object::Type::TypedList: {
       return encode<TypedListObject>(
@@ -289,4 +289,4 @@ bool Encoder::encode(const Object& value) {
       return false;
   }
 }
-}  // namespace hessian2
+}  // namespace Hessian2

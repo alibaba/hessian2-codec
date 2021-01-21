@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 
-**hessian2-codec** is a C++ library from Alibaba for hessian2 codec. It is a complete C++ implementation of [hessian2 spec](http://hessian.caucho.com/doc/hessian-serialization.html). Because it was originally intended to implement the Dubbo Filter of Envoy, it did not provide good support for serialization of user-defined types (there is only one way to implement user-defined types using ADL, but it is not very complete and does not support nested types well). 
+**hessian2-codec** is a C++ library from Alibaba for hessian2 codec. It is a complete C++ implementation of [hessian2 spec](http://hessian.caucho.com/doc/hessian-serialization.html). Because it was originally intended to implement the Dubbo Filter of Envoy, it did not provide good support for serialization of user-defined types (there is only one way to implement user-defined types using ADL, but it is not very complete and does not support nested types well).
 At the moment it is simply deserializing content into some C++ intermediate types.
 
 ## Getting Started
@@ -31,9 +31,9 @@ $ ./bazel-bin/demo
 int main() {
   {
     std::string out;
-    ::hessian2::Encoder encode(out);
+    ::Hessian2::Encoder encode(out);
     encode.encode<std::string>("test string");
-    ::hessian2::Decoder decode(out);
+    ::Hessian2::Decoder decode(out);
     auto ret = decode.decode<std::string>();
     if (ret) {
       std::cout << *ret << std::endl;
@@ -43,9 +43,9 @@ int main() {
   }
   {
     std::string out;
-    ::hessian2::Encoder encode(out);
+    ::Hessian2::Encoder encode(out);
     encode.encode<int64_t>(100);
-    ::hessian2::Decoder decode(out);
+    ::Hessian2::Decoder decode(out);
     auto ret = decode.decode<int64_t>();
     if (ret) {
       std::cout << *ret << std::endl;
@@ -74,12 +74,13 @@ struct Person {
   std::string name_;
 };
 
-// The custom struct needs to implement from_hessian and to_hessian methods to encode and decode
+// The custom struct needs to implement from_hessian and to_hessian methods to
+// encode and decode
 
-void from_hessian(Person&, ::hessian2::Decoder&);
-bool to_hessian(const Person&, ::hessian2::Encoder&);
+void fromHessian(Person&, ::Hessian2::Decoder&);
+bool toHessian(const Person&, ::Hessian2::Encoder&);
 
-void from_hessian(Person& p, ::hessian2::Decoder& d) {
+void fromHessian(Person& p, ::Hessian2::Decoder& d) {
   auto age = d.decode<int32_t>();
   if (age) {
     p.age_ = *age;
@@ -91,7 +92,7 @@ void from_hessian(Person& p, ::hessian2::Decoder& d) {
   }
 }
 
-bool to_hessian(const Person& p, ::hessian2::Encoder& e) {
+bool toHessian(const Person& p, ::Hessian2::Encoder& e) {
   e.encode<int32_t>(p.age_);
   e.encode<std::string>(p.name_);
   return true;
@@ -99,19 +100,21 @@ bool to_hessian(const Person& p, ::hessian2::Encoder& e) {
 
 int main() {
   std::string out;
-  hessian2::Encoder encode(out);
+  Hessian2::Encoder encode(out);
   Person s;
   s.age_ = 12;
   s.name_ = "test";
 
   encode.encode<Person>(s);
-  hessian2::Decoder decode(out);
+  Hessian2::Decoder decode(out);
   auto decode_person = decode.decode<Person>();
   if (!decode_person) {
-    std::cerr << "hessian decode failed " << decode.getErrorMessage() << std::endl;
+    std::cerr << "hessian decode failed " << decode.getErrorMessage()
+              << std::endl;
     return -1;
   }
-  std::cout << "Age: " << decode_person->age_ << " Name: " << decode_person->name_ << std::endl;  
+  std::cout << "Age: " << decode_person->age_
+            << " Name: " << decode_person->name_ << std::endl;
 }
 ```
 
@@ -139,35 +142,35 @@ struct Slice {
   size_t size_;
 };
 
-class SliceReader : public ::hessian2::Reader {
+class SliceReader : public ::Hessian2::Reader {
  public:
   SliceReader(Slice buffer) : buffer_(buffer){};
   virtual ~SliceReader() = default;
 
-  virtual void RawReadNbytes(void* out, size_t len,
+  virtual void rawReadNBytes(void* out, size_t len,
                              size_t peek_offset) override {
-    ABSL_ASSERT(ByteAvailable() + peek_offset >= len);
+    ABSL_ASSERT(byteAvailable() + peek_offset >= len);
     uint8_t* dest = static_cast<uint8_t*>(out);
-    // 
-    memcpy(dest, buffer_.data_ + Offset() + peek_offset, len);
+    // offset() Returns the current position that has been read.
+    memcpy(dest, buffer_.data_ + offset() + peek_offset, len);
   }
-  virtual uint64_t Length() const override { return buffer_.size_; }
+  virtual uint64_t length() const override { return buffer_.size_; }
 
  private:
   Slice buffer_;
 };
 
-class VectorWriter : public ::hessian2::Writer {
+class VectorWriter : public ::Hessian2::Writer {
  public:
   VectorWriter(std::vector<uint8_t>& data) : data_(data) {}
   ~VectorWriter() = default;
-  virtual void RawWrite(const void* data, uint64_t size) {
+  virtual void rawWrite(const void* data, uint64_t size) {
     const char* src = static_cast<const char*>(data);
     for (size_t i = 0; i < size; i++) {
       data_.push_back(src[i]);
     }
   }
-  virtual void RawWrite(absl::string_view data) {
+  virtual void rawWrite(absl::string_view data) {
     for (auto& ch : data) {
       data_.push_back(ch);
     }
@@ -181,11 +184,11 @@ int main() {
   std::vector<uint8_t> data;
   auto writer = std::make_unique<VectorWriter>(data);
 
-  ::hessian2::Encoder encode(std::move(writer));
+  ::Hessian2::Encoder encode(std::move(writer));
   encode.encode<std::string>("test string");
   Slice s{static_cast<const uint8_t*>(data.data()), data.size()};
   auto reader = std::make_unique<SliceReader>(s);
-  ::hessian2::Decoder decode(std::move(reader));
+  ::Hessian2::Decoder decode(std::move(reader));
   auto ret = decode.decode<std::string>();
   if (ret) {
     std::cout << *ret << std::endl;
@@ -236,7 +239,7 @@ Pull requests containing fixes are welcome!
 * macOS
 * Windows(Theoretically, yes, but I haven't tested it.)
 
-### Compilers 
+### Compilers
 
 * gcc 5.0+
 * clang 5.0+

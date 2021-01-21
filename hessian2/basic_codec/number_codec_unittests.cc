@@ -9,12 +9,12 @@
 #include "hessian2/test_framework/decoder_test_framework.h"
 #include "hessian2/test_framework/encoder_test_framework.h"
 
-namespace hessian2 {
+namespace Hessian2 {
 class NumberCodecTest : public testing::Test {
  public:
   template <typename T>
   void decodeSucc(absl::string_view data, T out, size_t size) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<T>();
     EXPECT_EQ(out, *output);
     EXPECT_EQ(size, decoder.offset());
@@ -22,7 +22,7 @@ class NumberCodecTest : public testing::Test {
 
   template <typename T>
   void decodeFail(absl::string_view data) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<T>();
     EXPECT_EQ(nullptr, output);
   }
@@ -30,7 +30,7 @@ class NumberCodecTest : public testing::Test {
   template <typename T>
   void encodeSucc(T data, size_t size, std::string expected_data = "") {
     std::string res;
-    hessian2::Encoder encoder(res);
+    Hessian2::Encoder encoder(res);
     encoder.encode<T>(data);
     if (!expected_data.empty()) {
       EXPECT_EQ(expected_data, res);
@@ -734,4 +734,4 @@ TEST_F(NumberCodecTest, EncodeInt64) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

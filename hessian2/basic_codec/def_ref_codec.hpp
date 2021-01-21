@@ -5,14 +5,14 @@
 #include "hessian2/codec.hpp"
 #include "hessian2/object.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 // class-def  ::= 'C' string int string*
 // object     ::= 'O' int value*
 //            ::= [x60-x6f] value*
 template <>
 std::unique_ptr<Object::Definition> Decoder::decode() {
-  auto ret = reader_->Read<uint8_t>();
+  auto ret = reader_->read<uint8_t>();
   if (!ret.first) {
     return nullptr;
   }
@@ -68,7 +68,7 @@ template <>
 bool Encoder::encode(const Object::RawDefinition &value) {
   auto r = getDefRef(value);
   if (r == -1) {
-    writer_->WriteByte('C');
+    writer_->writeByte('C');
     def_ref_.push_back(std::make_shared<Object::RawDefinition>(value));
     encode<std::string>(value.type_);
     encode<int32_t>(value.field_names_.size());
@@ -79,9 +79,9 @@ bool Encoder::encode(const Object::RawDefinition &value) {
   } else {
     if (r <= 15) {
       uint8_t code = 0x60 + r;
-      writer_->WriteByte(code);
+      writer_->writeByte(code);
     } else {
-      writer_->WriteByte('O');
+      writer_->writeByte('O');
       encode<int32_t>(r);
     }
   }
@@ -94,4 +94,4 @@ bool Encoder::encode(const Object::Definition &value) {
   return encode<Object::RawDefinition>(*value.data_);
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

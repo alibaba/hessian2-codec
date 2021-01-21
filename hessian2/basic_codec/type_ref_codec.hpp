@@ -5,11 +5,11 @@
 #include "hessian2/basic_codec/number_codec.hpp"
 #include "hessian2/basic_codec/string_codec.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 template <>
 std::unique_ptr<Object::TypeRef> Decoder::decode() {
-  auto ret = reader_->Peek<uint8_t>();
+  auto ret = reader_->peek<uint8_t>();
   if (!ret.first) {
     return nullptr;
   }
@@ -53,4 +53,4 @@ bool Encoder::encode(const Object::TypeRef &value) {
   return true;
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

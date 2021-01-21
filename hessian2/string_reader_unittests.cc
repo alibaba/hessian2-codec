@@ -6,7 +6,7 @@
 #include "hessian2/reader.hpp"
 #include "hessian2/string_reader.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class StringReaderTest : public testing::Test {
  public:
@@ -19,7 +19,7 @@ class StringReaderTest : public testing::Test {
   template <typename T>
   void readBE(std::vector<std::pair<T, bool>> &vals) {
     for (const auto &val : vals) {
-      auto out = reader_.ReadBE<T>();
+      auto out = reader_.readBE<T>();
       EXPECT_EQ(std::get<1>(val), out.first);
       if (out.first) {
         EXPECT_EQ(std::get<0>(val), out.second);
@@ -30,7 +30,7 @@ class StringReaderTest : public testing::Test {
   template <typename T>
   void readLE(std::vector<std::pair<T, bool>> &vals) {
     for (const auto &val : vals) {
-      auto out = reader_.ReadLE<T>();
+      auto out = reader_.readLE<T>();
       EXPECT_EQ(std::get<1>(val), out.first);
       if (out.first) {
         EXPECT_EQ(std::get<0>(val), out.second);
@@ -47,10 +47,10 @@ TEST_F(StringReaderTest, ReadAndPeekI8) {
     absl::string_view buffer(reinterpret_cast<char *>(&buf), 3);
     reader_ = StringReader(buffer);
 
-    EXPECT_EQ(reader_.Peek<int8_t>().second, 0);
-    EXPECT_EQ(reader_.Peek<int8_t>(0).second, 0);
-    EXPECT_EQ(reader_.Peek<int8_t>(1).second, 1);
-    EXPECT_EQ(reader_.Peek<int8_t>(2).second, -2);
+    EXPECT_EQ(reader_.peek<int8_t>().second, 0);
+    EXPECT_EQ(reader_.peek<int8_t>(0).second, 0);
+    EXPECT_EQ(reader_.peek<int8_t>(1).second, 1);
+    EXPECT_EQ(reader_.peek<int8_t>(2).second, -2);
     EXPECT_EQ(buffer.size(), 3);
 
     std::vector<std::pair<int8_t, bool>> vals = {
@@ -63,7 +63,7 @@ TEST_F(StringReaderTest, ReadAndPeekI8) {
     std::string input;
     reader_ = StringReader(input);
     std::vector<std::pair<int8_t, bool>> vals = {{0, false}};
-    EXPECT_EQ(reader_.Peek<int8_t>(0).first, false);
+    EXPECT_EQ(reader_.peek<int8_t>(0).first, false);
     readBE<int8_t>(vals);
   }
 
@@ -71,8 +71,8 @@ TEST_F(StringReaderTest, ReadAndPeekI8) {
     std::string input(1, 0x30);
     reader_ = StringReader(input);
     std::vector<std::pair<int8_t, bool>> vals = {{0x30, true}, {0, false}};
-    EXPECT_EQ(reader_.Peek<int8_t>(0).second, 0x30);
-    EXPECT_EQ(reader_.Peek<int8_t>(1).first, false);
+    EXPECT_EQ(reader_.peek<int8_t>(0).second, 0x30);
+    EXPECT_EQ(reader_.peek<int8_t>(1).first, false);
     readBE<int8_t>(vals);
   }
 }
@@ -82,11 +82,11 @@ TEST_F(StringReaderTest, ReadAndPeekLEI16) {
     unsigned char buf[] = {0, 1, 2, 3, 0xFF, 0xFF};
     absl::string_view buffer(reinterpret_cast<char *>(&buf), 6);
     reader_ = StringReader(buffer);
-    EXPECT_EQ(reader_.PeekLE<int16_t>().second, 0x0100);
-    EXPECT_EQ(reader_.PeekLE<int16_t>(0).second, 0x0100);
-    EXPECT_EQ(reader_.PeekLE<int16_t>(1).second, 0x0201);
-    EXPECT_EQ(reader_.PeekLE<int16_t>(2).second, 0x0302);
-    EXPECT_EQ(reader_.PeekLE<int16_t>(4).second, -1);
+    EXPECT_EQ(reader_.peekLE<int16_t>().second, 0x0100);
+    EXPECT_EQ(reader_.peekLE<int16_t>(0).second, 0x0100);
+    EXPECT_EQ(reader_.peekLE<int16_t>(1).second, 0x0201);
+    EXPECT_EQ(reader_.peekLE<int16_t>(2).second, 0x0302);
+    EXPECT_EQ(reader_.peekLE<int16_t>(4).second, -1);
     EXPECT_EQ(buffer.length(), 6);
     std::vector<std::pair<int16_t, bool>> vals = {
         {0x0100, true}, {0x0302, true}, {0xFFFF, true}, {0, false}};
@@ -98,7 +98,7 @@ TEST_F(StringReaderTest, ReadAndPeekLEI16) {
     std::string input;
     reader_ = StringReader(input);
     std::vector<std::pair<int16_t, bool>> vals = {{0, false}};
-    EXPECT_EQ(reader_.PeekLE<int16_t>().first, false);
+    EXPECT_EQ(reader_.peekLE<int16_t>().first, false);
     readLE<int16_t>(vals);
   }
 
@@ -106,8 +106,8 @@ TEST_F(StringReaderTest, ReadAndPeekLEI16) {
     std::string input(2, 0x30);
     reader_ = StringReader(input);
     std::vector<std::pair<int16_t, bool>> vals = {{0x3030, true}, {0, false}};
-    EXPECT_EQ(reader_.Peek<int16_t>(0).second, 0x3030);
-    EXPECT_EQ(reader_.Peek<int16_t>(1).first, false);
+    EXPECT_EQ(reader_.peek<int16_t>(0).second, 0x3030);
+    EXPECT_EQ(reader_.peek<int16_t>(1).first, false);
     readLE<int16_t>(vals);
   }
 }
@@ -117,11 +117,11 @@ TEST_F(StringReaderTest, ReadAndPeekLEI32) {
     unsigned char buf[] = {0, 1, 2, 3, 0xFF, 0xFF, 0XFF, 0XFF};
     absl::string_view buffer(reinterpret_cast<char *>(&buf), 8);
     reader_ = StringReader(buffer);
-    EXPECT_EQ(reader_.PeekLE<int32_t>().second, 0x03020100);
-    EXPECT_EQ(reader_.PeekLE<int32_t>(0).second, 0x03020100);
-    EXPECT_EQ(reader_.PeekLE<int32_t>(1).second, 0xFF030201);
-    EXPECT_EQ(reader_.PeekLE<int32_t>(2).second, 0xFFFF0302);
-    EXPECT_EQ(reader_.PeekLE<int32_t>(4).second, -1);
+    EXPECT_EQ(reader_.peekLE<int32_t>().second, 0x03020100);
+    EXPECT_EQ(reader_.peekLE<int32_t>(0).second, 0x03020100);
+    EXPECT_EQ(reader_.peekLE<int32_t>(1).second, 0xFF030201);
+    EXPECT_EQ(reader_.peekLE<int32_t>(2).second, 0xFFFF0302);
+    EXPECT_EQ(reader_.peekLE<int32_t>(4).second, -1);
     EXPECT_EQ(buffer.length(), 8);
     std::vector<std::pair<int32_t, bool>> vals = {
         {0x03020100, true}, {0xFFFFFFFF, true}, {0, false}};
@@ -133,7 +133,7 @@ TEST_F(StringReaderTest, ReadAndPeekLEI32) {
     std::string input;
     reader_ = StringReader(input);
     std::vector<std::pair<int32_t, bool>> vals = {{0, false}};
-    EXPECT_EQ(reader_.PeekLE<int32_t>().first, false);
+    EXPECT_EQ(reader_.peekLE<int32_t>().first, false);
     readLE<int32_t>(vals);
   }
 
@@ -142,8 +142,8 @@ TEST_F(StringReaderTest, ReadAndPeekLEI32) {
     reader_ = StringReader(input);
     std::vector<std::pair<int32_t, bool>> vals = {{0x30303030, true},
                                                   {0, false}};
-    EXPECT_EQ(reader_.PeekLE<int32_t>().second, 0x30303030);
-    EXPECT_EQ(reader_.PeekLE<int32_t>(1).first, false);
+    EXPECT_EQ(reader_.peekLE<int32_t>().second, 0x30303030);
+    EXPECT_EQ(reader_.peekLE<int32_t>(1).first, false);
     readLE<int32_t>(vals);
   }
 }
@@ -154,11 +154,11 @@ TEST_F(StringReaderTest, ReadAndPeekLEI64) {
                            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     absl::string_view buffer(reinterpret_cast<char *>(&buf), 16);
     reader_ = StringReader(buffer);
-    EXPECT_EQ(reader_.PeekLE<int64_t>().second, 0x0706050403020100);
-    EXPECT_EQ(reader_.PeekLE<int64_t>(0).second, 0x0706050403020100);
-    EXPECT_EQ(reader_.PeekLE<int64_t>(1).second, 0xFF07060504030201);
-    EXPECT_EQ(reader_.PeekLE<int64_t>(2).second, 0xFFFF070605040302);
-    EXPECT_EQ(reader_.PeekLE<int64_t>(8).second, -1);
+    EXPECT_EQ(reader_.peekLE<int64_t>().second, 0x0706050403020100);
+    EXPECT_EQ(reader_.peekLE<int64_t>(0).second, 0x0706050403020100);
+    EXPECT_EQ(reader_.peekLE<int64_t>(1).second, 0xFF07060504030201);
+    EXPECT_EQ(reader_.peekLE<int64_t>(2).second, 0xFFFF070605040302);
+    EXPECT_EQ(reader_.peekLE<int64_t>(8).second, -1);
     EXPECT_EQ(buffer.length(), 16);
 
     std::vector<std::pair<int64_t, bool>> vals = {
@@ -171,7 +171,7 @@ TEST_F(StringReaderTest, ReadAndPeekLEI64) {
     std::string input;
     reader_ = StringReader(input);
     std::vector<std::pair<int64_t, bool>> vals = {{0, false}};
-    EXPECT_EQ(reader_.PeekLE<int64_t>(0).first, false);
+    EXPECT_EQ(reader_.peekLE<int64_t>(0).first, false);
     readLE<int64_t>(vals);
   }
 
@@ -180,8 +180,8 @@ TEST_F(StringReaderTest, ReadAndPeekLEI64) {
     reader_ = StringReader(input);
     std::vector<std::pair<int64_t, bool>> vals = {{0x3030303030303030, true},
                                                   {0, false}};
-    EXPECT_EQ(reader_.PeekLE<int64_t>(0).second, 0x3030303030303030);
-    EXPECT_EQ(reader_.PeekLE<int64_t>(1).first, false);
+    EXPECT_EQ(reader_.peekLE<int64_t>(0).second, 0x3030303030303030);
+    EXPECT_EQ(reader_.peekLE<int64_t>(1).first, false);
     readLE<int64_t>(vals);
   }
 }
@@ -191,11 +191,11 @@ TEST_F(StringReaderTest, ReadAndPeekLEU16) {
     unsigned char buf[] = {0, 1, 2, 3, 0xFF, 0xFF};
     absl::string_view buffer(reinterpret_cast<char *>(&buf), 6);
     reader_ = StringReader(buffer);
-    EXPECT_EQ(reader_.PeekLE<uint16_t>().second, 0x0100);
-    EXPECT_EQ(reader_.PeekLE<uint16_t>(0).second, 0x0100);
-    EXPECT_EQ(reader_.PeekLE<uint16_t>(1).second, 0x0201);
-    EXPECT_EQ(reader_.PeekLE<uint16_t>(2).second, 0x0302);
-    EXPECT_EQ(reader_.PeekLE<uint16_t>(4).second, 0xFFFF);
+    EXPECT_EQ(reader_.peekLE<uint16_t>().second, 0x0100);
+    EXPECT_EQ(reader_.peekLE<uint16_t>(0).second, 0x0100);
+    EXPECT_EQ(reader_.peekLE<uint16_t>(1).second, 0x0201);
+    EXPECT_EQ(reader_.peekLE<uint16_t>(2).second, 0x0302);
+    EXPECT_EQ(reader_.peekLE<uint16_t>(4).second, 0xFFFF);
     EXPECT_EQ(buffer.length(), 6);
     std::vector<std::pair<uint16_t, bool>> vals = {
         {0x0100, true}, {0x0302, true}, {0xFFFF, true}, {0, false}};
@@ -278,14 +278,14 @@ TEST_F(StringReaderTest, ReadString) {
     std::string input("HELLO");
     reader_ = StringReader(input);
     std::string data;
-    EXPECT_EQ(5, reader_.ByteAvailable());
-    reader_.ReadNbytes(utils::allocStringBuffer(&data, 2), 1);
+    EXPECT_EQ(5, reader_.byteAvailable());
+    reader_.readNBytes(Utils::allocStringBuffer(&data, 2), 1);
     EXPECT_EQ("H", data);
-    EXPECT_EQ(4, reader_.ByteAvailable());
-    reader_.ReadNbytes(utils::allocStringBuffer(&data, 3), 2);
+    EXPECT_EQ(4, reader_.byteAvailable());
+    reader_.readNBytes(Utils::allocStringBuffer(&data, 3), 2);
     EXPECT_EQ("EL", data);
-    EXPECT_EQ(2, reader_.ByteAvailable());
+    EXPECT_EQ(2, reader_.byteAvailable());
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

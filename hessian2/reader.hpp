@@ -4,39 +4,39 @@
 
 #include "byte_order.h"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class Reader {
  public:
   Reader() = default;
   virtual ~Reader() = default;
   // Returns the current position that has been read.
-  virtual uint64_t Offset() const { return initial_offset_; }
+  virtual uint64_t offset() const { return initial_offset_; }
   // Returns the current entire buffer size, containing the portion that has
   // been read.
-  virtual uint64_t Length() const = 0;
+  virtual uint64_t length() const = 0;
   // How much buffer is currently unread.
-  virtual uint64_t ByteAvailable() const { return Length() - Offset(); }
-  virtual void RawReadNbytes(void* data, size_t len, size_t offset) = 0;
+  virtual uint64_t byteAvailable() const { return length() - offset(); }
+  virtual void rawReadNBytes(void* data, size_t len, size_t offset) = 0;
 
-  void ReadNbytes(void* data, size_t len) {
-    RawReadNbytes(data, len, 0);
+  void readNBytes(void* data, size_t len) {
+    rawReadNBytes(data, len, 0);
     initial_offset_ += len;
   }
 
   template <typename T, ByteOrderType Endianness = ByteOrderType::Host,
             size_t Size = sizeof(T)>
   std::pair<bool, typename std::enable_if<std::is_integral<T>::value, T>::type>
-  Peek(uint64_t peek_offset = 0) {
+  peek(uint64_t peek_offset = 0) {
     auto result = static_cast<T>(0);
     constexpr const auto all_bits_enabled = static_cast<T>(~static_cast<T>(0));
-    if (ByteAvailable() - peek_offset < Size) {
+    if (byteAvailable() - peek_offset < Size) {
       return std::pair<bool, T>{false, result};
     }
     constexpr const auto displacement =
         Endianness == ByteOrderType::BigEndian ? sizeof(T) - Size : 0;
     int8_t* bytes = reinterpret_cast<int8_t*>(std::addressof(result));
-    RawReadNbytes(&bytes[displacement], Size, peek_offset);
+    rawReadNBytes(&bytes[displacement], Size, peek_offset);
     constexpr const auto most_significant_read_byte =
         Endianness == ByteOrderType::BigEndian ? displacement : Size - 1;
 
@@ -59,8 +59,8 @@ class Reader {
   template <typename T, ByteOrderType Endianness = ByteOrderType::Host,
             size_t Size = sizeof(T)>
   std::pair<bool, typename std::enable_if<std::is_integral<T>::value, T>::type>
-  Read() {
-    auto result = Peek<T, Endianness, Size>(0);
+  read() {
+    auto result = peek<T, Endianness, Size>(0);
     if (result.first) {
       initial_offset_ += Size;
     }
@@ -68,23 +68,23 @@ class Reader {
   }
 
   template <typename T>
-  std::pair<bool, T> ReadLE() {
-    return Read<T, ByteOrderType::LittleEndian, sizeof(T)>();
+  std::pair<bool, T> readLE() {
+    return read<T, ByteOrderType::LittleEndian, sizeof(T)>();
   }
 
   template <typename T>
-  std::pair<bool, T> ReadBE() {
-    return Read<T, ByteOrderType::BigEndian, sizeof(T)>();
+  std::pair<bool, T> readBE() {
+    return read<T, ByteOrderType::BigEndian, sizeof(T)>();
   }
 
   template <typename T>
-  std::pair<bool, T> PeekLE(uint64_t peek_offset = 0) {
-    return Peek<T, ByteOrderType::LittleEndian, sizeof(T)>(peek_offset);
+  std::pair<bool, T> peekLE(uint64_t peek_offset = 0) {
+    return peek<T, ByteOrderType::LittleEndian, sizeof(T)>(peek_offset);
   }
 
   template <typename T>
-  std::pair<bool, T> PeeBE(uint64_t peek_offset = 0) {
-    return Peek<T, ByteOrderType::BigEndian, sizeof(T)>(peek_offset);
+  std::pair<bool, T> peekBE(uint64_t peek_offset = 0) {
+    return peek<T, ByteOrderType::BigEndian, sizeof(T)>(peek_offset);
   }
 
  protected:
@@ -93,4 +93,4 @@ class Reader {
 
 using ReaderPtr = std::unique_ptr<Reader>;
 
-}  // namespace hessian2
+}  // namespace Hessian2

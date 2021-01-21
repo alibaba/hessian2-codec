@@ -5,19 +5,19 @@
 #include "hessian2/basic_codec/def_ref_codec.hpp"
 #include "hessian2/object.hpp"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class DefinitionTest : public testing::Test {
  public:
   void decodeSucc(absl::string_view data, Object::Definition out) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<Object::Definition>();
     EXPECT_EQ(out, *output);
     EXPECT_EQ(1, decoder.offset());
   }
 
   void decodeFail(absl::string_view data) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<Object::Definition>();
     EXPECT_EQ(nullptr, output);
   }
@@ -47,7 +47,7 @@ TEST(DefRefCodecTest, Decode) {
                            0x05, 'c',  'o', 'l', 'o', 'r',  0x05, 'm',
                            'o',  'd',  'e', 'l', 'O', 0x90, 0x60, 0x61};
     std::string data(reinterpret_cast<char *>(buf), sizeof(buf));
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     Object::RawDefinition def;
     def.type_ = "hello";
     def.field_names_.push_back("color");
@@ -84,7 +84,7 @@ TEST(DefRefCodecTest, encode) {
     def.field_names_.push_back("color");
     def.field_names_.push_back("model");
     std::string output;
-    hessian2::Encoder encoder(output);
+    Hessian2::Encoder encoder(output);
 
     encoder.encode(def);
     EXPECT_EQ(1, encoder.getDefRefSize());
@@ -92,4 +92,4 @@ TEST(DefRefCodecTest, encode) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2

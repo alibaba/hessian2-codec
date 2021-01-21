@@ -6,14 +6,14 @@
 #include <array>
 #include <string>
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class Process {
  public:
   Process() = default;
   ~Process() = default;
 
-  bool Write(const std::string& input) {
+  bool write(const std::string& input) {
     assert(write_mode_);
     assert(pipe_);
     auto size = fwrite(input.data(), 1, input.size(), pipe_);
@@ -58,4 +58,4 @@ class Process {
   bool write_mode_{false};
 };
 
-}  // namespace hessian2
+}  // namespace Hessian2

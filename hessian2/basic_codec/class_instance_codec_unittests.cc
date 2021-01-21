@@ -11,26 +11,26 @@
 #include "hessian2/test_framework/decoder_test_framework.h"
 #include "hessian2/test_framework/encoder_test_framework.h"
 
-namespace hessian2 {
+namespace Hessian2 {
 
 class ClassInstanceTest : public testing::Test {
  public:
   void decodeSucc(absl::string_view data, ClassInstanceObject out) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<ClassInstanceObject>();
     EXPECT_EQ(out, *output);
     EXPECT_EQ(1, decoder.offset());
   }
 
   void decodeFail(absl::string_view data) {
-    hessian2::Decoder decoder(data);
+    Hessian2::Decoder decoder(data);
     auto output = decoder.decode<ClassInstanceObject>();
     EXPECT_EQ(nullptr, output);
   }
 
   void encodeSucc(ClassInstanceObject data, std::string expected_data = "") {
     std::string res;
-    hessian2::Encoder encoder(res);
+    Hessian2::Encoder encoder(res);
     encoder.encode<ClassInstanceObject>(data);
     if (!expected_data.empty()) {
       EXPECT_EQ(expected_data, res);
@@ -374,4 +374,4 @@ TEST_F(TestEncoderFramework, EncoderJavaTestCaseForClassInstance) {
   }
 }
 
-}  // namespace hessian2
+}  // namespace Hessian2
