@@ -72,7 +72,7 @@ class Object {
     size_t hash() const {
       size_t hash = 0;
       hash = std::hash<std::string>{}(type_);
-      utils::hashCombine(hash, field_names_.size());
+      Utils::hashCombine(hash, field_names_.size());
       return hash;
     }
 
@@ -118,7 +118,7 @@ class Object {
     size_t hash() const {
       ABSL_ASSERT(def_);
       size_t hash = def_->hash();
-      utils::hashCombine(hash, data_.size());
+      Utils::hashCombine(hash, data_.size());
       return hash;
     }
     RawDefinitionSharedPtr def_;
@@ -462,7 +462,7 @@ class BinaryObject : public Object {
 
     hash = data_.size();
     for (auto& i : data_) {
-      utils::hashCombine(hash, i);
+      Utils::hashCombine(hash, i);
     }
     return hash;
   }
@@ -546,7 +546,7 @@ class UntypedListObject : public Object {
     // to calculate the hash value and by comparing operators to handle hash
     // conflicts
     size_t hash = std::hash<std::string>{}(UntypedListMagicString);
-    utils::hashCombine(hash, data_.size());
+    Utils::hashCombine(hash, data_.size());
     return hash;
   }
 
@@ -595,7 +595,7 @@ class TypedListObject : public Object {
   virtual size_t hash() const {
     size_t hash = 0;
     hash = std::hash<std::string>{}(data_.type_name_);
-    utils::hashCombine(hash, data_.values_.size());
+    Utils::hashCombine(hash, data_.values_.size());
     return hash;
   }
 
@@ -644,7 +644,7 @@ class TypedMapObject : public Object {
                           GENERATE_REF_TYPE_METHOD, DO_NOT_GENERATE_HASH)
   virtual size_t hash() const {
     size_t hash = std::hash<std::string>{}(data_.type_name_);
-    utils::hashCombine(hash, data_.field_name_and_value_.size());
+    Utils::hashCombine(hash, data_.field_name_and_value_.size());
     return hash;
   }
   virtual std::string toDebugString() const {
@@ -737,7 +737,7 @@ class UntypedMapObject : public Object {
     // itself is unordered, so it is difficult to get a stable hash value, so
     // use the magic string and data size to compute hash for map type.
     size_t hash = std::hash<std::string>{}(UntypedMapMagicString);
-    utils::hashCombine(hash, data_.size());
+    Utils::hashCombine(hash, data_.size());
     return hash;
   }
 

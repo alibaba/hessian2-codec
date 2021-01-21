@@ -279,10 +279,10 @@ TEST_F(StringReaderTest, ReadString) {
     reader_ = StringReader(input);
     std::string data;
     EXPECT_EQ(5, reader_.byteAvailable());
-    reader_.readNBytes(utils::allocStringBuffer(&data, 2), 1);
+    reader_.readNBytes(Utils::allocStringBuffer(&data, 2), 1);
     EXPECT_EQ("H", data);
     EXPECT_EQ(4, reader_.byteAvailable());
-    reader_.readNBytes(utils::allocStringBuffer(&data, 3), 2);
+    reader_.readNBytes(Utils::allocStringBuffer(&data, 3), 2);
     EXPECT_EQ("EL", data);
     EXPECT_EQ(2, reader_.byteAvailable());
   }

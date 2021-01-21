@@ -5,7 +5,7 @@
 #include <string>
 
 namespace Hessian2 {
-class utils {
+class Utils {
  public:
   static char* allocStringBuffer(std::string* str, size_t length) {
     str->reserve(length);

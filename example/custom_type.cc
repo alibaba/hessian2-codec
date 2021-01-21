@@ -11,10 +11,10 @@ struct Person {
 // The custom struct needs to implement from_hessian and to_hessian methods to
 // encode and decode
 
-void from_hessian(Person&, ::Hessian2::Decoder&);
-bool to_hessian(const Person&, ::Hessian2::Encoder&);
+void fromHessian(Person&, ::Hessian2::Decoder&);
+bool toHessian(const Person&, ::Hessian2::Encoder&);
 
-void from_hessian(Person& p, ::Hessian2::Decoder& d) {
+void fromHessian(Person& p, ::Hessian2::Decoder& d) {
   auto age = d.decode<int32_t>();
   if (age) {
     p.age_ = *age;
@@ -26,7 +26,7 @@ void from_hessian(Person& p, ::Hessian2::Decoder& d) {
   }
 }
 
-bool to_hessian(const Person& p, ::Hessian2::Encoder& e) {
+bool toHessian(const Person& p, ::Hessian2::Encoder& e) {
   e.encode<int32_t>(p.age_);
   e.encode<std::string>(p.name_);
   return true;

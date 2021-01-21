@@ -23,24 +23,25 @@ namespace detail {
 struct FromHessianFn {
   template <typename CustomType>
   void operator()(CustomType& j, Decoder& c) const noexcept {
-    return from_hessian(j, c);
+    return fromHessian(j, c);
   }
 };
 
 struct ToHessianFn {
   template <typename CustomType>
   bool operator()(const CustomType& j, Encoder& e) const noexcept {
-    return to_hessian(j, e);
+    return toHessian(j, e);
   }
 };
 }  // namespace detail
 
-/// namespace to hold default `from_hessian` function
+/// namespace to hold default `fromHessian`/`toHessian` function
 /// to see why this is required:
 /// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4381.html
 namespace {
-constexpr const auto& from_hessian = static_const<detail::FromHessianFn>::value;
-constexpr const auto& to_hessian = static_const<detail::ToHessianFn>::value;
+// Global function objects.
+constexpr const auto& FromHessian = static_const<detail::FromHessianFn>::value;
+constexpr const auto& ToHessian = static_const<detail::ToHessianFn>::value;
 }  // namespace
 
 class Decoder {
@@ -59,7 +60,7 @@ class Decoder {
   template <typename T>
   std::unique_ptr<T> decode() {
     auto t = std::make_unique<T>();
-    Hessian2::from_hessian(*t, *this);
+    Hessian2::FromHessian(*t, *this);
     return t;
   }
 
@@ -115,7 +116,7 @@ class Encoder {
   Encoder(WriterPtr&& writer) : writer_(std::move(writer)) {}
   template <typename T>
   bool encode(const T& o) {
-    return Hessian2::to_hessian(o, *this);
+    return Hessian2::ToHessian(o, *this);
   }
 
   // References are not currently supported
