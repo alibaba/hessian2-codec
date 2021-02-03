@@ -5,6 +5,7 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "bool_codec_lib",
     srcs = [
+      "bool_codec.cc",
       "bool_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
@@ -30,6 +31,7 @@ cc_test(
 cc_library(
     name = "byte_codec_lib",
     srcs = [
+      "byte_codec.cc",
       "byte_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
@@ -55,6 +57,7 @@ cc_test(
 cc_library(
     name = "date_codec_lib",
     srcs = [
+      "date_codec.cc",
       "date_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
@@ -80,6 +83,7 @@ cc_test(
 cc_library(
     name = "number_codec_lib",
     srcs = [
+      "number_codec.cc",
       "number_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
@@ -105,6 +109,7 @@ cc_test(
 cc_library(
     name = "string_codec_lib",
     srcs = [
+      "string_codec.cc",
       "string_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
@@ -130,10 +135,12 @@ cc_test(
 cc_library(
     name = "ref_object_codec_lib",
     srcs = [
+      "ref_object_codec.cc",
       "ref_object_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
     deps = [
+        ":number_codec_lib",
         ":string_codec_lib",
         "//hessian2:codec_lib",
     ],
@@ -142,6 +149,7 @@ cc_library(
 cc_library(
     name = "type_ref_lib",
     srcs = [
+      "type_ref_codec.cc",
       "type_ref_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
@@ -167,6 +175,7 @@ cc_test(
 cc_library(
     name = "def_ref_codec_lib",
     srcs = [
+      "def_ref_codec.cc",
       "def_ref_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
@@ -192,10 +201,15 @@ cc_test(
 cc_library(
     name = "object_codec_lib",
     srcs = [
+      "object_codec.cc",
       "object_codec.hpp",
+      "list_codec.cc",
       "list_codec.hpp",
+      "map_codec.cc",
       "map_codec.hpp",
+      "class_instance_codec.cc",
       "class_instance_codec.hpp",
+      "def_ref_codec.cc",
       "def_ref_codec.hpp",
     ],
     copts = DEFAULT_COPTS,
