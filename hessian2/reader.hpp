@@ -1,5 +1,7 @@
 #pragma once
 
+#include <climits>
+#include <memory>
 #include <string>
 
 #include "byte_order.h"
@@ -56,16 +58,6 @@ class Reader {
                                     sign_extension_bits);
   }
 
-  template <>
-  std::pair<bool, uint8_t> peek<uint8_t>(uint64_t peek_offset) {
-    uint8_t result = 0;
-    if (byteAvailable() - peek_offset < 1) {
-      return {false, 0};
-    }
-    rawReadNBytes(&result, 1, peek_offset);
-    return {true, result};
-  }
-
   template <typename T, ByteOrderType Endianness = ByteOrderType::Host,
             size_t Size = sizeof(T)>
   std::pair<bool, typename std::enable_if<std::is_integral<T>::value, T>::type>
@@ -100,6 +92,9 @@ class Reader {
  protected:
   uint64_t initial_offset_{0};
 };
+
+template <>
+std::pair<bool, uint8_t> Reader::peek<uint8_t>(uint64_t peek_offset);
 
 using ReaderPtr = std::unique_ptr<Reader>;
 
