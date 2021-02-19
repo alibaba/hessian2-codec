@@ -4,6 +4,45 @@ namespace Hessian2 {
 
 namespace {
 constexpr size_t STRING_CHUNK_SIZE = 32768;
+
+int64_t getUtf8StringLength(const absl::string_view &out,
+                            std::vector<uint64_t> &per_chunk_raw_size) {
+  size_t utf_len = 0;
+  size_t i = 0;
+  size_t next_chunk_size = 0;
+
+  while (i < out.size()) {
+    auto code = static_cast<uint8_t>(out[i]);
+    if (code < 0x80) {
+      // One octect utf8 string 0x00-0x7f.
+      utf_len++;
+      i++;
+    } else if ((code & 0xe0) == 0xc0) {
+      // Two octect utf8 string 0xc2-0xdf.
+      utf_len++;
+      i += 2;
+    } else if ((code & 0xf0) == 0xe0) {
+      // Three octect utf8 string 0xe0-0xef.
+      utf_len++;
+      i += 3;
+    } else if ((code & 0xf0) == 0xf0) {
+      // Four octect utf8 string 0xf0-0xf4.
+      utf_len++;
+      i += 4;
+    } else {
+      return -1;
+    }
+    if ((utf_len - next_chunk_size) >= STRING_CHUNK_SIZE) {
+      next_chunk_size += STRING_CHUNK_SIZE;
+      per_chunk_raw_size.push_back(i);
+    }
+  }
+
+  if (per_chunk_raw_size.empty() || per_chunk_raw_size.back() != i) {
+    per_chunk_raw_size.push_back(i);
+  }
+
+  return utf_len;
 }
 
 // TODO(tianqian.zyf): Do I need to check the UTF-8 validity?
@@ -13,74 +52,41 @@ bool finalReadUtf8String(std::string &output, Reader &reader, size_t length) {
   // and utF8 can be represented by up to 4 bytes, so it is length * 4
   output.reserve(length * 4);
   while (length > 0) {
-    auto ch1 = reader.read<uint8_t>();
-    if (!ch1.first) {
+    if (reader.byteAvailable() < length) {
       return false;
     }
-    if (ch1.second < 0x80) {
-      output.push_back(ch1.second);
-      length--;
-      continue;
+    uint64_t current_pos = output.size();
+    std::vector<uint64_t> raw_bytes_size;
+
+    output.resize(current_pos + length);
+    // Read the 'length' bytes from the reader buffer to the output.
+    reader.readNBytes(&output[current_pos], length);
+
+    auto output_view = absl::string_view(output).substr(current_pos);
+    int64_t utf8_len = getUtf8StringLength(output_view, raw_bytes_size);
+
+    if (utf8_len == -1 || raw_bytes_size.empty()) {
+      return false;
     }
 
-    output.push_back(ch1.second);
-    auto ch2 = reader.read<uint8_t>();
-    if (!ch2.first) {
-      return false;
-    }
-    output.push_back(ch2.second);
-    if ((ch1.second & 0xe0) == 0xc0) {
-      length--;
-      continue;
-    }
-
-    auto ch3 = reader.read<uint8_t>();
-    if (!ch3.first) {
-      return false;
-    }
-    output.push_back(ch3.second);
-    if ((ch1.second & 0xf0) == 0xe0) {
-      length--;
-      continue;
+    uint64_t byte_len = raw_bytes_size.back();
+    if (byte_len > length) {
+      auto padding_size = byte_len - length;
+      if (reader.byteAvailable() < padding_size) {
+        return false;
+      }
+      output.resize(current_pos + byte_len);
+      // Read the 'padding_size' bytes from the reader buffer to the output.
+      reader.readNBytes(&output[0] + current_pos + length, padding_size);
     }
 
-    auto ch4 = reader.read<uint8_t>();
-    if (!ch4.first) {
-      return false;
-    }
-    output.push_back(ch4.second);
-    if ((ch1.second & 0xf8) == 0xf0) {
-      length--;
-      continue;
-    }
-    return false;
+    length -= utf8_len;
   }
-
   return true;
 }
 
 bool readChunkString(std::string &output, Reader &reader, size_t length,
-                     bool is_last_chunk) {
-  auto ret = finalReadUtf8String(output, reader, length);
-  if (!ret) {
-    return false;
-  }
-
-  if (is_last_chunk) {
-    return true;
-  }
-
-  return decodeStringWithReader(output, reader);
-}
-
-template <>
-std::unique_ptr<std::string> Decoder::decode() {
-  auto out = std::make_unique<std::string>();
-  if (!decodeStringWithReader(*out.get(), *reader_.get())) {
-    return nullptr;
-  }
-  return out;
-}
+                     bool is_last_chunk);
 
 bool decodeStringWithReader(std::string &out, Reader &reader) {
   size_t delta_length = 0;
@@ -159,6 +165,31 @@ bool decodeStringWithReader(std::string &out, Reader &reader) {
   return false;
 }
 
+bool readChunkString(std::string &output, Reader &reader, size_t length,
+                     bool is_last_chunk) {
+  auto ret = finalReadUtf8String(output, reader, length);
+  if (!ret) {
+    return false;
+  }
+
+  if (is_last_chunk) {
+    return true;
+  }
+
+  return decodeStringWithReader(output, reader);
+}
+
+}  // namespace
+
+template <>
+std::unique_ptr<std::string> Decoder::decode() {
+  auto out = std::make_unique<std::string>();
+  if (!decodeStringWithReader(*out.get(), *reader_.get())) {
+    return nullptr;
+  }
+  return out;
+}
+
 // # UTF-8 encoded character string split into 32k chunks
 // ::= x52 b1 b0 <utf8-data> string  # non-final chunk
 // ::= 'S' b1 b0 <utf8-data>         # string of length 0-32768
@@ -220,63 +251,6 @@ bool Encoder::encode(const absl::string_view &data) {
 template <>
 bool Encoder::encode(const std::string &data) {
   return encode<absl::string_view>(absl::string_view(data));
-}
-
-int64_t getUtf8StringLength(const absl::string_view &out,
-                            std::vector<uint64_t> &per_chunk_raw_size) {
-  size_t utf_len = 0;
-  size_t i = 0;
-  size_t next_chunk_size = 0;
-
-  while (i < out.size()) {
-    auto code = static_cast<uint8_t>(out[i]);
-    // One octect utf8 string 0x00-0x7f
-    if (code < 0x80) {
-      utf_len++;
-      i++;
-      if ((utf_len - next_chunk_size) >= STRING_CHUNK_SIZE) {
-        next_chunk_size += STRING_CHUNK_SIZE;
-        per_chunk_raw_size.push_back(i);
-      }
-      continue;
-    }
-
-    // Two octect utf8 string 0xc2-0xdf
-    if ((code & 0xe0) == 0xc0) {
-      i += 2;
-      utf_len++;
-      if ((utf_len - next_chunk_size) >= STRING_CHUNK_SIZE) {
-        next_chunk_size += STRING_CHUNK_SIZE;
-        per_chunk_raw_size.push_back(i);
-      }
-      continue;
-    }
-
-    // Three octect 0xe0-0xef
-    if ((code & 0xf0) == 0xe0) {
-      utf_len++;
-      i += 3;
-      if ((utf_len - next_chunk_size) >= STRING_CHUNK_SIZE) {
-        next_chunk_size += STRING_CHUNK_SIZE;
-        per_chunk_raw_size.push_back(i);
-      }
-      continue;
-    }
-
-    // four octect 0xf0-0xf4
-    if ((code & 0xf0) == 0xf0) {
-      utf_len++;
-      i += 4;
-      if ((utf_len - next_chunk_size) >= STRING_CHUNK_SIZE) {
-        next_chunk_size += STRING_CHUNK_SIZE;
-        per_chunk_raw_size.push_back(i);
-      }
-      continue;
-    }
-
-    return -1;
-  }
-  return utf_len;
 }
 
 }  // namespace Hessian2
