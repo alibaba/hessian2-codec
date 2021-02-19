@@ -5,36 +5,33 @@ namespace Hessian2 {
 namespace {
 constexpr size_t STRING_CHUNK_SIZE = 32768;
 
+static const size_t UTF_8_CHAR_LENGTHS[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                            1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                                            0, 0, 2, 2, 2, 2, 3, 3, 4, 0};
+
+template <bool WITH_PER_CHUNK>
 int64_t getUtf8StringLength(const absl::string_view &out,
                             std::vector<uint64_t> &per_chunk_raw_size) {
   size_t utf_len = 0;
   size_t i = 0;
   size_t next_chunk_size = 0;
 
-  while (i < out.size()) {
+  for (; i < out.size();) {
     auto code = static_cast<uint8_t>(out[i]);
-    if (code < 0x80) {
-      // One octect utf8 string 0x00-0x7f.
-      utf_len++;
-      i++;
-    } else if ((code & 0xe0) == 0xc0) {
-      // Two octect utf8 string 0xc2-0xdf.
-      utf_len++;
-      i += 2;
-    } else if ((code & 0xf0) == 0xe0) {
-      // Three octect utf8 string 0xe0-0xef.
-      utf_len++;
-      i += 3;
-    } else if ((code & 0xf0) == 0xf0) {
-      // Four octect utf8 string 0xf0-0xf4.
-      utf_len++;
-      i += 4;
-    } else {
+    auto size = UTF_8_CHAR_LENGTHS[code >> 3];
+
+    if (size == 0) {
       return -1;
     }
-    if ((utf_len - next_chunk_size) >= STRING_CHUNK_SIZE) {
-      next_chunk_size += STRING_CHUNK_SIZE;
-      per_chunk_raw_size.push_back(i);
+
+    utf_len++;
+    i += size;
+
+    if constexpr (WITH_PER_CHUNK) {
+      if ((utf_len - next_chunk_size) >= STRING_CHUNK_SIZE) {
+        next_chunk_size += STRING_CHUNK_SIZE;
+        per_chunk_raw_size.push_back(i);
+      }
     }
   }
 
@@ -63,13 +60,13 @@ bool finalReadUtf8String(std::string &output, Reader &reader, size_t length) {
     reader.readNBytes(&output[current_pos], length);
 
     auto output_view = absl::string_view(output).substr(current_pos);
-    int64_t utf8_len = getUtf8StringLength(output_view, raw_bytes_size);
+    int64_t utf8_len = getUtf8StringLength<false>(output_view, raw_bytes_size);
 
-    if (utf8_len == -1 || raw_bytes_size.empty()) {
+    if (utf8_len == -1) {
       return false;
     }
 
-    uint64_t byte_len = raw_bytes_size.back();
+    size_t byte_len = raw_bytes_size.back();
     if (byte_len > length) {
       auto padding_size = byte_len - length;
       if (reader.byteAvailable() < padding_size) {
@@ -198,7 +195,7 @@ std::unique_ptr<std::string> Decoder::decode() {
 template <>
 bool Encoder::encode(const absl::string_view &data) {
   std::vector<uint64_t> raw_chunk_size;
-  int64_t length = getUtf8StringLength(data, raw_chunk_size);
+  int64_t length = getUtf8StringLength<true>(data, raw_chunk_size);
   if (length == -1) {
     return false;
   }
