@@ -5,6 +5,21 @@ namespace Hessian2 {
 namespace {
 constexpr size_t STRING_CHUNK_SIZE = 32768;
 
+// The legal UTF-8 encoding uses 1 to 4 bytes to represent a character. Their
+// format is shown below.
+
+// length byte[0]  byte[1]  byte[2]  byte[3]
+// 1      0xxxxxxx
+// 2      110xxxxx 10xxxxxx
+// 3      1110xxxx 10xxxxxx 10xxxxxx
+// 4      11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+
+// According to the above format, only the first five bits of the first byte are
+// needed to determine the number of bytes occupied by a character. There are a
+// total of 32 possibilities for 5 bits. Use 32 possible values as indexes and
+// the corresponding number of bytes as values to form the following array to
+// speed up the parsing of UTF-8 characters.
+// Ref: https://nullprogram.com/blog/2017/10/06/
 static const size_t UTF_8_CHAR_LENGTHS[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                             1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
                                             0, 0, 2, 2, 2, 2, 3, 3, 4, 0};
