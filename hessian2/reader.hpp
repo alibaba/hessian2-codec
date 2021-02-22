@@ -1,5 +1,7 @@
 #pragma once
 
+#include <climits>
+#include <memory>
 #include <string>
 
 #include "byte_order.h"
@@ -90,6 +92,9 @@ class Reader {
  protected:
   uint64_t initial_offset_{0};
 };
+
+template <>
+std::pair<bool, uint8_t> Reader::peek<uint8_t>(uint64_t peek_offset);
 
 using ReaderPtr = std::unique_ptr<Reader>;
 

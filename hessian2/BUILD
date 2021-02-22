@@ -30,6 +30,7 @@ cc_library(
 cc_library(
     name = "reader_lib",
     srcs = [
+        "reader.cc",
         "reader.hpp",
     ],
     copts = DEFAULT_COPTS,
@@ -143,5 +144,3 @@ cc_test(
         "@com_google_googletest//:gtest_main",
     ],
 )
-
-
