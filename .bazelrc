@@ -11,6 +11,13 @@ build --define absl=1
 build --action_env=CC
 build --action_env=CXX
 build --action_env=PATH
+build --enable_platform_specific_config
+
+# Linux
+build:linux --cxxopt=-std=c++17
+
+# windows
+build:windows --cxxopt=/std:c++17
 
 # Common flags for sanitizers
 build:sanitizer --linkopt -ldl

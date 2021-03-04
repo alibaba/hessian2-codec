@@ -1,5 +1,6 @@
 #pragma once
 
+#include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "hessian2/reader.hpp"
 
