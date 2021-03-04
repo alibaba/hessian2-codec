@@ -241,8 +241,8 @@ Pull requests containing fixes are welcome!
 
 ### Compilers
 
-* gcc 5.0+
-* clang 5.0+
+* gcc 7.0+
+* clang 7.0+
 
 ### Build Systems
 
