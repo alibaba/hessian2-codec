@@ -8,6 +8,13 @@
 
 namespace Hessian2 {
 
+#if (defined WIN32) || (defined _WIN32)
+
+#define popen _popen
+#define pclose _pclose
+
+#endif
+
 class Process {
  public:
   Process() = default;
@@ -57,5 +64,12 @@ class Process {
   std::string output_;
   bool write_mode_{false};
 };
+
+#if (defined WIN32) || (defined _WIN32)
+
+#undef popen
+#undef pclose
+
+#endif
 
 }  // namespace Hessian2
