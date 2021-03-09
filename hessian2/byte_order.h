@@ -23,6 +23,10 @@
 
 #elif (defined WIN32) || (defined _WIN32)
 
+// Ensure that WinSock2.h contains htonll and ntohll.
+#undef NO_EXTRA_HTON_FUNCTIONS
+#define INCL_EXTRA_HTON_FUNCTIONS
+
 #include <WinSock2.h>
 // <winsock2.h> includes <windows.h>, so undef some interfering symbols
 #undef DELETE
