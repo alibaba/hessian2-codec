@@ -42,6 +42,18 @@ std::string GenerateString65536() {
   return expect;
 }
 
+std::string GenerateString131072() {
+  std::string expect;
+  for (int i = 0; i < 3072; ++i) {
+    expect.append(absl::StrFormat(
+        "%d%d%d 56789012345678901234567890123456789012345678901234567890123\n",
+        i / 100, i / 10 % 10, i % 10));
+  }
+
+  expect.resize(131072);
+  return expect;
+}
+
 std::string GenerateComplexString() {
   return "킐\u0088中国你好!\u0088\u0088\u0088\u0088\u0088\u0088";
 }
@@ -75,6 +87,22 @@ class StringCodecTest : public testing::Test {
     decodeSucc(res, data, size);
   }
 };
+
+TEST(SimpleDecodingAndEncodingTest, SimpleDecodingAndEncodingTest) {
+  {
+    std::string buffer;
+
+    std::string value = GenerateString131072();
+
+    Hessian2::Encoder encoder(buffer);
+
+    encoder.encode(value);
+
+    Hessian2::Decoder decoder(buffer);
+
+    EXPECT_EQ(*decoder.decode<std::string>(), value);
+  }
+}
 
 TEST_F(TestDecoderFramework, DecoderJavaTestCaseForString) {
   { EXPECT_TRUE(Decode<std::string>("replyString_0", std::string())); }
