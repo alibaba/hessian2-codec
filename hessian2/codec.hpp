@@ -48,7 +48,7 @@ class Decoder {
  public:
   // Error codes during decode.
   enum class ErrorCode {
-    NO_ERROR = 0,
+    NO_DECODE_ERROR,
     NOT_ENOUGH_BUFFER,
     UNEXPECTED_TYPE,
   };
@@ -87,13 +87,13 @@ class Decoder {
   std::vector<Object::RawDefinitionSharedPtr> def_ref_;
   // decode's objects need to have a lifetime longer than value_ref_
   std::vector<Object*> values_ref_;
-  ErrorCode error_code_{ErrorCode::NO_ERROR};
+  ErrorCode error_code_{ErrorCode::NO_DECODE_ERROR};
   int error_pos_{0};
 
  private:
   std::string errorCodeToString() const {
     switch (error_code_) {
-      case ErrorCode::NO_ERROR:
+      case ErrorCode::NO_DECODE_ERROR:
         return std::string();
       case ErrorCode::NOT_ENOUGH_BUFFER:
         return std::string("There is not enough buffer");
@@ -108,7 +108,7 @@ class Encoder {
  public:
   // Error codes during encode.
   enum class ErrorCode {
-    NO_ERROR = 0,
+    NO_ENCODE_ERROR,
   };
   // Use default StringWriter implement
   Encoder(std::string& output)
@@ -171,7 +171,7 @@ class Encoder {
  private:
   std::string errorCodeToString() const {
     switch (error_code_) {
-      case ErrorCode::NO_ERROR:
+      case ErrorCode::NO_ENCODE_ERROR:
         return std::string();
     }
     return std::string();
@@ -184,7 +184,7 @@ class Encoder {
   // Encode's objects need to have a lifetime longer than values_ref_
   // Only two pointers to the same object are considered references
   std::unordered_map<const Object*, uint16_t> values_ref_;
-  ErrorCode error_code_{ErrorCode::NO_ERROR};
+  ErrorCode error_code_{ErrorCode::NO_ENCODE_ERROR};
 };
 
 // fwd decl

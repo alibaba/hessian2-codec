@@ -215,17 +215,16 @@ bool Encoder::encode(const absl::string_view &data) {
     return false;
   }
   // Java's 16-bit integers are signed, so the maximum value is 32768
-  uint32_t strOffset = 0;
-  uint16_t step_length = 0;
+  uint32_t str_offset = 0;
+  uint16_t step_length = STRING_CHUNK_SIZE;
   int pos = 0;
   while (static_cast<uint64_t>(length) > STRING_CHUNK_SIZE) {
-    step_length = STRING_CHUNK_SIZE;
     writer_->writeByte(0x52);
     writer_->writeBE<uint16_t>(step_length);
     length -= step_length;
     auto raw_offset = raw_chunk_size[pos++];
-    writer_->rawWrite(absl::string_view(data.begin() + strOffset, raw_offset));
-    strOffset += raw_offset;
+    writer_->rawWrite(data.substr(str_offset, raw_offset - str_offset));
+    str_offset = raw_offset;
   }
 
   if (length == 0) {
@@ -238,8 +237,7 @@ bool Encoder::encode(const absl::string_view &data) {
     // [x00-x1f] <utf8-data>
     // Compact: short strings
     writer_->writeByte(length);
-    writer_->rawWrite(
-        absl::string_view(data.begin() + strOffset, data.size() - strOffset));
+    writer_->rawWrite(data.substr(str_offset, data.size() - str_offset));
     return true;
   }
 
@@ -249,14 +247,13 @@ bool Encoder::encode(const absl::string_view &data) {
     uint8_t remain = length % 256;
     writer_->writeByte(0x30 + code);
     writer_->writeByte(remain);
-    writer_->rawWrite(
-        absl::string_view(data.begin() + strOffset, data.size() - strOffset));
+    writer_->rawWrite(data.substr(str_offset, data.size() - str_offset));
     return true;
   }
+
   writer_->writeByte(0x53);
   writer_->writeBE<uint16_t>(length);
-  writer_->rawWrite(
-      absl::string_view(data.begin() + strOffset, data.size() - strOffset));
+  writer_->rawWrite(data.substr(str_offset, data.size() - str_offset));
   return true;
 }
 
