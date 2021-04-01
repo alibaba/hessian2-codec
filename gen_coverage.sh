@@ -29,7 +29,7 @@ echo "    TARGETS=${COVERAGE_TARGETS}"
 
 function gen_coverage_data() {
     echo "Generating coverage data..."
-    bazel coverage --combined_report=lcov "$1" --test_output=errors | tee gen_coverage.log
+    bazel coverage "$1" --test_output=errors | tee ${OUTPUT_DIR}/gen_coverage.log
 }
 
 function purge_files() {
@@ -65,9 +65,10 @@ function gen_report() {
     # add --branch-coverage to show branch coverage
     genhtml --title ${PROJECT} --ignore-errors "source" ${datfiles} -o "${OUTPUT_DIR}"
     tar -zcf ${PROJECT}_coverage.tar.gz ${OUTPUT_DIR}
+    mv ${PROJECT}_coverage.tar.gz ${OUTPUT_DIR}
 
     echo "HTML coverage report is in ${OUTPUT_DIR}/index.html"
-    echo "All coverage report files are in ${PROJECT}_coverage.tar.gz"
+    echo "All coverage report files are in ${OUTPUT_DIR}/${PROJECT}_coverage.tar.gz"
 }
 
 gen_coverage_data ${COVERAGE_TARGETS}
