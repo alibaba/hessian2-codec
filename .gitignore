@@ -3,3 +3,4 @@ compile_commands.json
 bazel-*
 test_hessian/.idea
 demo/bazel-*
+coverage_report/
