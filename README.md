@@ -2,6 +2,7 @@
 
 ![CI](https://github.com/alibaba/hessian2-codec/workflows/CI/badge.svg?branch=main)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+![Coverage](https://codecov.io/gh/alibaba/hessian2-codec/branch/main/graph/badge.svg)
 
 
 **hessian2-codec** is a C++ library from Alibaba for hessian2 codec. It is a complete C++ implementation of [hessian2 spec](http://hessian.caucho.com/doc/hessian-serialization.html). Because it was originally intended to implement the Dubbo Filter of Envoy, it did not provide good support for serialization of user-defined types (there is only one way to implement user-defined types using ADL, but it is not very complete and does not support nested types well).
