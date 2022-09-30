@@ -26,6 +26,7 @@ build:sanitizer --test_tag_filters=-no_san
 
 # Common flags for Clang
 build:clang --action_env=BAZEL_COMPILER=clang
+build:clang --action_env=CC=clang --action_env=CXX=clang++
 build:clang --linkopt=-fuse-ld=lld
 
 # Basic ASAN/UBSAN that works for gcc
@@ -87,6 +88,7 @@ build:sizeopt -c opt --copt -Os
 # Coverage options
 coverage --config=coverage
 coverage --build_tests_only
+build:coverage --config=clang
 build:coverage --action_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1
 build:coverage --action_env=GCOV=llvm-profdata
 build:coverage --combined_report=lcov

@@ -2,7 +2,12 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Some global variables.
+env:
+  BAZEL_LINK: https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+  CLANG_LINK: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push: {}
@@ -20,9 +25,12 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # Add llvm to the PATH.
+      - run: |
+          echo "/opt/llvm/bin" >> $GITHUB_PATH
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-        
+
       - name: mount bazel cache
         uses: actions/cache@v1
         with:
@@ -34,23 +42,46 @@ jobs:
           java-version: 1.8
 
       - name: build test hessian2
-        run: cd test_hessian && mvn clean package -Dmaven.test.skip=true 
-        
-      - name: install bazelisk
+        run: cd test_hessian && mvn clean package -Dmaven.test.skip=true
+
+      - name: install bazel
         run: |
-          curl -LO "https://github.com/bazelbuild/bazelisk/releases/download/v1.1.0/bazelisk-linux-amd64"
-          mkdir -p "${GITHUB_WORKSPACE}/bin/"
-          mv bazelisk-linux-amd64 "${GITHUB_WORKSPACE}/bin/bazel"
-          chmod +x "${GITHUB_WORKSPACE}/bin/bazel"
-      
+          sudo wget -O /usr/local/bin/bazel $BAZEL_LINK
+          sudo chmod +x /usr/local/bin/bazel
+
       - name: build
         run: |
-          "${GITHUB_WORKSPACE}/bin/bazel" build //hessian2/...
-      
+          bazel build //hessian2/...
+
       - name: demo-build
         run: |
-          cd demo && "${GITHUB_WORKSPACE}/bin/bazel" build //...
+          cd demo && bazel build //...
 
       - name: test
         run: |
-          "${GITHUB_WORKSPACE}/bin/bazel" test //hessian2/...
+          bazel test //hessian2/...
+
+      - name: install lcov and genhtml
+        run: |
+          sudo apt update
+          sudo apt -y install lcov
+
+      - name: install clang
+        run: |
+          sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
+          sudo mkdir -p /opt/llvm
+          sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
+
+      # Run the script to generate coverage report. Clang/llvm and lcov/genhtml are necessary for this.
+      - name: coverage
+        run: |
+          ./coverage.sh
+
+      # Upload coverage report to the codecov.
+      - name: report
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
+          files: ./coverage_report/coverage.dat
+          name: codecov-hessian2-codec
+          verbose: true
