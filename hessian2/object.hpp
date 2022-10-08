@@ -9,50 +9,85 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/container/node_hash_map.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "common/common.h"
 #include "common/macros.h"
 
-constexpr const char* UntypedMapMagicString = "untypedmap";
-constexpr const char* UntypedListMagicString = "untypedlist";
-constexpr const char* NullMagicString = "null";
+#include <iostream>
 
 namespace Hessian2 {
+
+constexpr char* UntypedMapMagicString = "untypedmap";
+constexpr char* UntypedListMagicString = "untypedlist";
+constexpr char* NullMagicString = "null";
+
+template <class T>
+using OptConstRef = absl::optional<std::reference_wrapper<const T>>;
+template <class T>
+using OptRef = absl::optional<std::reference_wrapper<T>>;
+
+using Binary = std::vector<uint8_t>;
 
 class Object;
 using ObjectPtr = std::unique_ptr<Object>;
 
+#define EmptyToMethod(Name, Type)                                      \
+  virtual OptConstRef<Type> to##Name() const { return absl::nullopt; } \
+  virtual OptRef<Type> toMutable##Name() { return absl::nullopt; }
+
+#define ValidToMethod(Name, Type)                                          \
+  OptConstRef<Type> to##Name() const override { return std::cref(data_); } \
+  OptRef<Type> toMutable##Name() override { return std::ref(data_); }
+
 class Object {
  public:
   struct ObjectHasher {
+    using is_transparent = void;
+
     std::size_t operator()(const ObjectPtr& k) const { return k->hash(); }
+    // In most of cases, string is used as map key. And by this function, we can
+    // search map entry by the string view directly and avoid creation of
+    // StringObject.
+    std::size_t operator()(absl::string_view k) const {
+      return absl::Hash<absl::string_view>{}(k);
+    }
   };
 
   struct ObjectEqual {
+    using is_transparent = void;
+
     bool operator()(const ObjectPtr& left, const ObjectPtr& right) const {
       return left->equal(*right);
+    }
+    // In most of cases, string is used as map key. And by this function, we can
+    // search map entry by the string view directly and avoid creation of
+    // StringObject.
+    bool operator()(const ObjectPtr& left, absl::string_view right) const {
+      if (left->type() != Type::String) {
+        return false;
+      }
+      return absl::string_view(left->toString().value().get()) == right;
+    }
+    bool operator()(absl::string_view left, const ObjectPtr& right) const {
+      if (right->type() != Type::String) {
+        return false;
+      }
+      return absl::string_view(right->toString().value().get()) == left;
     }
   };
 
   struct TypeRef {
-    bool operator==(const TypeRef& other) const {
-      if (other.type_ != type_) {
-        return false;
-      }
-      return true;
-    }
+    bool operator==(const TypeRef& other) const { return other.type_ == type_; }
     TypeRef(absl::string_view type) : type_(type) {}
     std::string type_;
   };
 
   struct RawDefinition {
     bool operator==(const RawDefinition& other) const {
-      if (other.type_ != type_) {
-        return false;
-      }
-      return field_names_ == other.field_names_;
+      return other.type_ == type_ && other.field_names_ == field_names_;
     }
 
     bool operator!=(const RawDefinition& other) const {
@@ -84,12 +119,9 @@ class Object {
 
   struct Definition {
     Definition() = default;
-    Definition(const RawDefinitionSharedPtr data) : data_(data) {}
+    Definition(const RawDefinitionSharedPtr data) : data_(std::move(data)) {}
     bool operator==(const Definition& other) const {
-      if (*other.data_ == *data_) {
-        return true;
-      }
-      return false;
+      return *other.data_ == *data_;
     }
     bool operator!=(const Definition& other) const { return !(other == *this); }
 
@@ -126,13 +158,14 @@ class Object {
   };
 
   using UntypedMap =
-      std::unordered_map<ObjectPtr, ObjectPtr, ObjectHasher, ObjectEqual>;
+      absl::node_hash_map<ObjectPtr, ObjectPtr, ObjectHasher, ObjectEqual>;
 
   struct TypedMap {
     TypedMap() = default;
     TypedMap(std::string&& type_name, UntypedMap&& values)
         : type_name_(std::move(type_name)),
           field_name_and_value_(std::move(values)) {}
+
     bool operator==(const TypedMap& other) const {
       if (other.type_name_ != type_name_) {
         return false;
@@ -155,6 +188,7 @@ class Object {
       }
       return true;
     }
+
     std::string type_name_;
     UntypedMap field_name_and_value_;
   };
@@ -205,67 +239,25 @@ class Object {
 
   Object() = default;
   virtual ~Object() = default;
+
   template <typename T>
   T& asType() {
     assert(dynamic_cast<T*>(this) != nullptr);
     return *static_cast<T*>(this);
   }
-  virtual absl::optional<bool> toBoolean() const { return absl::nullopt; }
-  virtual bool* toMutableBoolean() { return nullptr; }
 
-  virtual absl::optional<int32_t> toInteger() const { return absl::nullopt; }
-  virtual int32_t* toMutableInteger() { return nullptr; }
-
-  virtual absl::optional<double> toDouble() const { return absl::nullopt; }
-  virtual double* toMutableDouble() { return nullptr; }
-
-  virtual absl::optional<const std::vector<uint8_t>*> toBinary() const {
-    return absl::nullopt;
-  }
-  virtual std::vector<uint8_t>* toMutableBinary() { return nullptr; }
-
-  virtual absl::optional<std::chrono::milliseconds> toDate() const {
-    return absl::nullopt;
-  }
-
-  virtual std::chrono::milliseconds* toMutableDate() { return nullptr; }
-
-  virtual absl::optional<int64_t> toLong() const { return absl::nullopt; }
-  virtual int64_t* toMutableLong() { return nullptr; }
-
-  virtual absl::optional<const std::string*> toString() const {
-    return absl::nullopt;
-  }
-  virtual std::string* toMutableString() { return nullptr; }
-
-  virtual absl::optional<const TypedList*> toTypedList() const {
-    return absl::nullopt;
-  }
-  virtual TypedList* toMutableTypedList() { return nullptr; }
-
-  virtual absl::optional<const UntypedList*> toUntypedList() const {
-    return absl::nullopt;
-  }
-
-  virtual UntypedList* toMutableUntypedList() { return nullptr; }
-
-  virtual absl::optional<const UntypedMap*> toUntypedMap() const {
-    return absl::nullopt;
-  }
-
-  virtual UntypedMap* toMutableUntypedMap() { return nullptr; }
-
-  virtual absl::optional<const TypedMap*> toTypedMap() const {
-    return absl::nullopt;
-  }
-
-  virtual TypedMap* toMutableTypedMap() { return nullptr; }
-
-  virtual absl::optional<const ClassInstance*> toClassInstance() const {
-    return absl::nullopt;
-  }
-
-  virtual ClassInstance* toMutableClassInstance() { return nullptr; }
+  EmptyToMethod(Boolean, bool);
+  EmptyToMethod(Integer, int32_t);
+  EmptyToMethod(Long, int64_t);
+  EmptyToMethod(Double, double);
+  EmptyToMethod(Date, std::chrono::milliseconds);
+  EmptyToMethod(Binary, Binary);
+  EmptyToMethod(String, std::string);
+  EmptyToMethod(TypedList, TypedList);
+  EmptyToMethod(UntypedList, UntypedList);
+  EmptyToMethod(TypedMap, TypedMap);
+  EmptyToMethod(UntypedMap, UntypedMap);
+  EmptyToMethod(ClassInstance, ClassInstance);
 
   virtual absl::optional<Object*> toRefDest() const { return absl::nullopt; }
 
@@ -285,65 +277,36 @@ class Object {
 };
 
 #define GENERATE_STD_HASH(DataType) \
-  virtual size_t hash() const { return std::hash<DataType>{}(data_); }
+  size_t hash() const override { return std::hash<DataType>{}(data_); }
 
 #define DO_NOT_GENERATE_HASH(DataType)
 
-#define GENERATE_COPY_TYPE_METHOD(ObjectType, DataType, MethodName,         \
-                                  GENERATE_HASH)                            \
-  virtual absl::optional<DataType> to##MethodName() const { return data_; } \
-  GENERATE_HASH(DataType)                                                   \
-  virtual bool equal(const Object& o) const {                               \
-    if (o.type() != ObjectType) {                                           \
-      return false;                                                         \
-    }                                                                       \
-    ABSL_ASSERT(o.to##MethodName().has_value());                             \
-    return o.to##MethodName().value() == data_;                             \
-  }
-
-#define GENERATE_REF_TYPE_METHOD(ObjectType, DataType, MethodName, \
-                                 GENERATE_HASH)                    \
-  virtual absl::optional<const DataType*> to##MethodName() const { \
-    return &data_;                                                 \
-  }                                                                \
-  GENERATE_HASH(DataType)                                          \
-  virtual bool equal(const Object& o) const {                      \
-    if (o.type() != ObjectType) {                                  \
-      return false;                                                \
-    }                                                              \
-    ABSL_ASSERT(o.to##MethodName().has_value());                    \
-    return *o.to##MethodName().value() == data_;                   \
-  }
-
-#define GENERATE_TRIVIAL_METHOD(ObjectType, DataType, MethodName, BasicMethod, \
-                                GENERATE_HASH)                                 \
-  virtual Type type() const { return ObjectType; }                             \
-  BasicMethod(ObjectType, DataType, MethodName,                                \
-              GENERATE_HASH) virtual DataType* toMutable##MethodName() {       \
-    return &data_;                                                             \
-  }
+#define GENERATE_TRIVIAL_METHOD(ObjectType, DataType, MethodName, \
+                                GENERATE_HASH)                    \
+  ValidToMethod(MethodName, DataType);                            \
+  Type type() const override { return ObjectType; }               \
+  bool equal(const Object& o) const override {                    \
+    if (o.type() != ObjectType) {                                 \
+      return false;                                               \
+    }                                                             \
+    ABSL_ASSERT(o.to##MethodName().has_value());                  \
+    return o.to##MethodName().value().get() == data_;             \
+  }                                                               \
+  GENERATE_HASH(DataType);
 
 class NullObject : public Object {
  public:
-  NullObject() = default;
-  virtual ~NullObject() = default;
-  virtual Type type() const { return Type::Null; }
+  Type type() const override { return Type::Null; }
 
-  virtual size_t hash() const {
+  // Object
+  size_t hash() const override {
     // TODO(tianqian.zyf): Provide a unique hash value.
     // GCC does not support std::hash<std::nullptr_t>{}(nullptr),
     // so only set a special hash value for NullObject.
     return std::hash<std::string>{}(NullMagicString);
   }
-
-  virtual bool equal(const Object& o) const {
-    if (o.type() != Type::Null) {
-      return false;
-    }
-    return true;
-  }
-
-  virtual std::string toDebugString() const {
+  bool equal(const Object& o) const override { return o.type() == Type::Null; }
+  std::string toDebugString() const override {
     return std::string("Type: Null");
   }
 };
@@ -353,17 +316,15 @@ class RefObject : public Object {
   // We need to make sure that the object that the RefObject points to has a
   // longer lifetime than the RefObject
   RefObject(Object* data) : data_(data) {}
-  virtual ~RefObject() = default;
-  virtual Type type() const { return Type::Ref; }
-  virtual absl::optional<Object*> toRefDest() const { return data_; }
-  virtual bool equal(const Object& o) const {
-    if (o.type() != Type::Ref) {
-      return false;
-    }
-    return o.toRefDest() == data_;
+
+  // Object.
+  Type type() const override { return Type::Ref; }
+  absl::optional<Object*> toRefDest() const override { return data_; }
+  bool equal(const Object& o) const override {
+    return o.type() == Type::Ref && o.toRefDest() == data_;
   }
-  virtual size_t hash() const { return data_->hash(); }
-  virtual std::string toDebugString() const {
+  size_t hash() const override { return data_->hash(); }
+  std::string toDebugString() const override {
     return absl::StrFormat("Type: Ref, target address: %p, value[%s]", data_,
                            data_->toDebugString());
   }
@@ -375,10 +336,10 @@ class RefObject : public Object {
 class BooleanObject : public Object {
  public:
   BooleanObject(bool data) : data_(data) {}
-  virtual ~BooleanObject() = default;
-  GENERATE_TRIVIAL_METHOD(Type::Boolean, bool, Boolean,
-                          GENERATE_COPY_TYPE_METHOD, GENERATE_STD_HASH)
-  virtual std::string toDebugString() const {
+
+  // Object
+  GENERATE_TRIVIAL_METHOD(Type::Boolean, bool, Boolean, GENERATE_STD_HASH);
+  std::string toDebugString() const override {
     return absl::StrFormat("Type: boolean, value[%s]",
                            data_ ? "true" : "false");
   }
@@ -390,10 +351,10 @@ class BooleanObject : public Object {
 class IntegerObject : public Object {
  public:
   IntegerObject(int32_t data) : data_(data) {}
-  virtual ~IntegerObject() = default;
-  GENERATE_TRIVIAL_METHOD(Type::Integer, int32_t, Integer,
-                          GENERATE_COPY_TYPE_METHOD, GENERATE_STD_HASH)
-  virtual std::string toDebugString() const {
+
+  // Object
+  GENERATE_TRIVIAL_METHOD(Type::Integer, int32_t, Integer, GENERATE_STD_HASH);
+  std::string toDebugString() const override {
     return absl::StrFormat("Type: integer, value[%d]", data_);
   }
 
@@ -404,10 +365,10 @@ class IntegerObject : public Object {
 class DoubleObject : public Object {
  public:
   DoubleObject(double data) : data_(data) {}
-  virtual ~DoubleObject() = default;
-  GENERATE_TRIVIAL_METHOD(Type::Double, double, Double,
-                          GENERATE_COPY_TYPE_METHOD, GENERATE_STD_HASH)
-  virtual std::string toDebugString() const {
+
+  // Object
+  GENERATE_TRIVIAL_METHOD(Type::Double, double, Double, GENERATE_STD_HASH);
+  std::string toDebugString() const override {
     return absl::StrFormat("Type: double, value[%f]", data_);
   }
 
@@ -418,11 +379,12 @@ class DoubleObject : public Object {
 class DateObject : public Object {
  public:
   DateObject(std::chrono::milliseconds data) : data_(data) {}
-  virtual ~DateObject() = default;
+
+  // Object
   GENERATE_TRIVIAL_METHOD(Type::Date, std::chrono::milliseconds, Date,
-                          GENERATE_COPY_TYPE_METHOD, DO_NOT_GENERATE_HASH)
-  virtual size_t hash() const { return std::hash<size_t>{}(data_.count()); }
-  virtual std::string toDebugString() const {
+                          DO_NOT_GENERATE_HASH)
+  size_t hash() const override { return std::hash<size_t>{}(data_.count()); }
+  std::string toDebugString() const override {
     return absl::StrFormat("Type: double, value[%d ms]", data_.count());
   }
 
@@ -433,9 +395,9 @@ class DateObject : public Object {
 class LongObject : public Object {
  public:
   LongObject(int64_t data) : data_(data) {}
-  virtual ~LongObject() = default;
-  GENERATE_TRIVIAL_METHOD(Type::Long, int64_t, Long, GENERATE_COPY_TYPE_METHOD,
-                          GENERATE_STD_HASH)
+
+  // Object
+  GENERATE_TRIVIAL_METHOD(Type::Long, int64_t, Long, GENERATE_STD_HASH);
   virtual std::string toDebugString() const {
     return absl::StrFormat("Type: long, value[%d]", data_);
   }
@@ -446,13 +408,11 @@ class LongObject : public Object {
 
 class BinaryObject : public Object {
  public:
-  BinaryObject(std::vector<uint8_t>&& data) : data_(std::move(data)) {}
-  BinaryObject(const std::vector<uint8_t>& data) : data_(data) {}
-  BinaryObject(std::unique_ptr<std::vector<uint8_t>>&& data)
-      : data_(std::move(*data)) {}
+  BinaryObject(Binary&& data) : data_(std::move(data)) {}
+  BinaryObject(const Binary& data) : data_(data) {}
+  BinaryObject(std::unique_ptr<Binary>&& data) : data_(std::move(*data)) {}
   virtual ~BinaryObject() = default;
-  GENERATE_TRIVIAL_METHOD(Type::Binary, std::vector<uint8_t>, Binary,
-                          GENERATE_REF_TYPE_METHOD, DO_NOT_GENERATE_HASH)
+  GENERATE_TRIVIAL_METHOD(Type::Binary, Binary, Binary, DO_NOT_GENERATE_HASH);
   virtual size_t hash() const {
     // TODO(tianqian.zyf:) Reduce CPU overhead associated with hash calculations
     static size_t hash = 0;
@@ -481,13 +441,13 @@ class BinaryObject : public Object {
                            ostream.str());
   }
 
-  std::vector<uint8_t>::iterator begin() { return data_.begin(); }
-  std::vector<uint8_t>::iterator end() { return data_.end(); }
-  std::vector<uint8_t>::const_iterator begin() const { return data_.cbegin(); }
-  std::vector<uint8_t>::const_iterator end() const { return data_.cend(); }
+  Binary::iterator begin() { return data_.begin(); }
+  Binary::iterator end() { return data_.end(); }
+  Binary::const_iterator begin() const { return data_.cbegin(); }
+  Binary::const_iterator end() const { return data_.cend(); }
 
  private:
-  std::vector<uint8_t> data_;
+  Binary data_;
   DISALLOW_COPY_AND_ASSIGN(BinaryObject);
 };
 
@@ -495,10 +455,16 @@ class StringObject : public Object {
  public:
   StringObject(absl::string_view data) : data_(data) {}
   StringObject(std::unique_ptr<std::string>&& data) : data_(std::move(*data)) {}
-  virtual ~StringObject() = default;
+
+  // Object
   GENERATE_TRIVIAL_METHOD(Type::String, std::string, String,
-                          GENERATE_REF_TYPE_METHOD, GENERATE_STD_HASH)
-  virtual std::string toDebugString() const {
+                          DO_NOT_GENERATE_HASH);
+  size_t hash() const override {
+    // Using absl::Hash for StringObject. Then we can find StringObject by the
+    // key of type absl::string derectly in the UntypedMap.
+    return absl::Hash<absl::string_view>{}(data_);
+  }
+  std::string toDebugString() const override {
     return absl::StrFormat("Type: string, value[%s]", data_);
   }
 
@@ -517,31 +483,30 @@ class UntypedListObject : public Object {
  public:
   UntypedListObject() = default;
   UntypedListObject(UntypedList&& data) : data_(std::move(data)) {}
-  virtual ~UntypedListObject() = default;
-  virtual Type type() const { return Type::UntypedList; }
+
   void setUntypedList(UntypedList&& data) { data_ = std::move(data); }
-  virtual absl::optional<const UntypedList*> toUntypedList() const {
-    return &data_;
-  }
-  virtual UntypedList* toMutableUntypedList() { return &data_; }
-  virtual bool equal(const Object& o) const {
+
+  // Object
+  Type type() const override { return Type::UntypedList; }
+  ValidToMethod(UntypedList, UntypedList);
+  bool equal(const Object& o) const override {
     if (o.type() != type()) {
       return false;
     }
 
     ABSL_ASSERT(o.toUntypedList().has_value());
     auto o_data = o.toUntypedList().value();
-    if (data_.size() != o_data->size()) {
+    if (data_.size() != o_data.get().size()) {
       return false;
     }
     for (size_t i = 0; i < data_.size(); i++) {
-      if (*data_[i] != *(*o_data)[i]) {
+      if (*data_[i] != *(o_data.get())[i]) {
         return false;
       }
     }
     return true;
   }
-  virtual size_t hash() const {
+  size_t hash() const override {
     // Avoid the hash computation overhead by using a magic string and data size
     // to calculate the hash value and by comparing operators to handle hash
     // conflicts
@@ -549,8 +514,7 @@ class UntypedListObject : public Object {
     Utils::hashCombine(hash, data_.size());
     return hash;
   }
-
-  virtual std::string toDebugString() const {
+  std::string toDebugString() const override {
     std::ostringstream ostream;
     for (auto& o : data_) {
       ostream << o->toDebugString() << "\n";
@@ -586,20 +550,18 @@ class TypedListObject : public Object {
   TypedListObject(Object::TypedList&& data) : data_(std::move(data)) {}
   TypedListObject(std::string&& type_name, UntypedList&& item)
       : data_(std::move(type_name), std::move(item)) {}
-  virtual ~TypedListObject() = default;
-  GENERATE_TRIVIAL_METHOD(Type::TypedList, TypedList, TypedList,
-                          GENERATE_REF_TYPE_METHOD, DO_NOT_GENERATE_HASH)
 
   void setTypedList(Object::TypedList&& data) { data_ = std::move(data); }
 
-  virtual size_t hash() const {
+  GENERATE_TRIVIAL_METHOD(Type::TypedList, TypedList, TypedList,
+                          DO_NOT_GENERATE_HASH)
+  size_t hash() const override {
     size_t hash = 0;
     hash = std::hash<std::string>{}(data_.type_name_);
     Utils::hashCombine(hash, data_.values_.size());
     return hash;
   }
-
-  virtual std::string toDebugString() const {
+  std::string toDebugString() const override {
     std::ostringstream ostream;
     for (auto& o : data_.values_) {
       ostream << o->toDebugString() << "\n";
@@ -639,15 +601,15 @@ class TypedMapObject : public Object {
   TypedMapObject(TypedMap&& data) : data_(std::move(data)) {}
   TypedMapObject(std::unique_ptr<TypedMap>&& data) : data_(std::move(*data)) {}
   void setTypedMap(TypedMap&& data) { data_ = std::move(data); }
-  virtual ~TypedMapObject() = default;
+
   GENERATE_TRIVIAL_METHOD(Type::TypedMap, TypedMap, TypedMap,
-                          GENERATE_REF_TYPE_METHOD, DO_NOT_GENERATE_HASH)
-  virtual size_t hash() const {
+                          DO_NOT_GENERATE_HASH);
+  size_t hash() const override {
     size_t hash = std::hash<std::string>{}(data_.type_name_);
     Utils::hashCombine(hash, data_.field_name_and_value_.size());
     return hash;
   }
-  virtual std::string toDebugString() const {
+  std::string toDebugString() const override {
     std::ostringstream ostream;
     for (auto& o : data_.field_name_and_value_) {
       ostream << "key: " << o.first->toDebugString()
@@ -672,8 +634,7 @@ class TypedMapObject : public Object {
   }
   // TODO(tianqian.zyf): Remove dup implement
   const Object* get(const std::string& key) const {
-    auto o =
-        data_.field_name_and_value_.find(std::make_unique<StringObject>(key));
+    auto o = data_.field_name_and_value_.find(key);
     if (o == data_.field_name_and_value_.end()) {
       return nullptr;
     }
@@ -682,8 +643,7 @@ class TypedMapObject : public Object {
   }
 
   Object* get(const std::string& key) {
-    auto o =
-        data_.field_name_and_value_.find(std::make_unique<StringObject>(key));
+    auto o = data_.field_name_and_value_.find(key);
     if (o == data_.field_name_and_value_.end()) {
       return nullptr;
     }
@@ -701,28 +661,27 @@ class UntypedMapObject : public Object {
   UntypedMapObject() = default;
   UntypedMapObject(UntypedMap&& data) : data_(std::move(data)) {}
   void setUntypedMap(UntypedMap&& data) { data_ = std::move(data); }
-  virtual ~UntypedMapObject() = default;
-  virtual Type type() const { return Type::UntypedMap; }
-  virtual absl::optional<const UntypedMap*> toUntypedMap() const {
-    return &data_;
+
+  // Object
+  Type type() const override { return Type::UntypedMap; }
+  OptConstRef<UntypedMap> toUntypedMap() const override {
+    return std::cref(data_);
   }
-
-  virtual UntypedMap* toMutableUntypedMap() { return &data_; }
-
-  virtual bool equal(const Object& o) const {
+  OptRef<UntypedMap> toMutableUntypedMap() override { return std::ref(data_); }
+  bool equal(const Object& o) const override {
     if (o.type() != type()) {
       return false;
     }
 
     ABSL_ASSERT(o.toUntypedMap().has_value());
-    auto o_data = o.toUntypedMap().value();
-    if (data_.size() != o_data->size()) {
+    auto& o_data = o.toUntypedMap().value().get();
+    if (data_.size() != o_data.size()) {
       return false;
     }
 
     for (const auto& elem : data_) {
-      auto it = o_data->find(elem.first);
-      if (it == o_data->end()) {
+      auto it = o_data.find(elem.first);
+      if (it == o_data.end()) {
         return false;
       }
       if (*(it->second) != *(elem.second)) {
@@ -731,8 +690,7 @@ class UntypedMapObject : public Object {
     }
     return true;
   }
-
-  virtual size_t hash() const {
+  size_t hash() const override {
     // The overhead of calculating hash for map type is too high, and the map
     // itself is unordered, so it is difficult to get a stable hash value, so
     // use the magic string and data size to compute hash for map type.
@@ -740,8 +698,7 @@ class UntypedMapObject : public Object {
     Utils::hashCombine(hash, data_.size());
     return hash;
   }
-
-  virtual std::string toDebugString() const {
+  std::string toDebugString() const override {
     std::ostringstream ostream;
     for (auto& o : data_) {
       ostream << "key: " << o.first->toDebugString()
@@ -761,16 +718,15 @@ class UntypedMapObject : public Object {
   UntypedMap::const_iterator end() const { return data_.cend(); }
 
   const Object* get(const std::string& key) const {
-    auto o = data_.find(std::make_unique<StringObject>(key));
+    auto o = data_.find(key);
     if (o == data_.end()) {
       return nullptr;
     }
 
     return o->second.get();
   }
-
   Object* get(const std::string& key) {
-    auto o = data_.find(std::make_unique<StringObject>(key));
+    auto o = data_.find(key);
     if (o == data_.end()) {
       return nullptr;
     }
@@ -786,13 +742,15 @@ class UntypedMapObject : public Object {
 class ClassInstanceObject : public Object {
  public:
   ClassInstanceObject() = default;
-  void setClassInstance(ClassInstance&& data) { data_ = std::move(data); }
   ClassInstanceObject(ClassInstance&& data) : data_(std::move(data)) {}
-  virtual ~ClassInstanceObject() = default;
+
+  void setClassInstance(ClassInstance&& data) { data_ = std::move(data); }
+
+  // Object
   GENERATE_TRIVIAL_METHOD(Type::Class, ClassInstance, ClassInstance,
-                          GENERATE_REF_TYPE_METHOD, DO_NOT_GENERATE_HASH)
-  virtual size_t hash() const { return data_.hash(); }
-  virtual std::string toDebugString() const {
+                          DO_NOT_GENERATE_HASH)
+  size_t hash() const override { return data_.hash(); }
+  std::string toDebugString() const override {
     std::ostringstream ostream;
     for (auto& o : data_.data_) {
       ostream << o->toDebugString() << " ";

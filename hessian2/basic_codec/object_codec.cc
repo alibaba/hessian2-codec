@@ -222,22 +222,22 @@ template <>
 bool Encoder::encode(const Object& value) {
   switch (value.type()) {
     case Object::Type::Binary: {
-      return encode<std::vector<uint8_t>>(*value.toBinary().value());
+      return encode<std::vector<uint8_t>>(value.toBinary().value().get());
     }
     case Object::Type::Boolean: {
-      return encode<bool>(value.toBoolean().value());
+      return encode<bool>(value.toBoolean().value().get());
     }
     case Object::Type::Date: {
-      return encode<std::chrono::milliseconds>(value.toDate().value());
+      return encode<std::chrono::milliseconds>(value.toDate().value().get());
     }
     case Object::Type::Double: {
-      return encode<double>(value.toDouble().value());
+      return encode<double>(value.toDouble().value().get());
     }
     case Object::Type::Integer: {
-      return encode<int32_t>(value.toInteger().value());
+      return encode<int32_t>(value.toInteger().value().get());
     }
     case Object::Type::Long: {
-      return encode<int64_t>(value.toLong().value());
+      return encode<int64_t>(value.toLong().value().get());
     }
     case Object::Type::Null: {
       NullObject o;
@@ -247,7 +247,7 @@ bool Encoder::encode(const Object& value) {
       return encode<RefObject>(*dynamic_cast<const RefObject*>(&value));
     }
     case Object::Type::String: {
-      return encode<std::string>(*value.toString().value());
+      return encode<std::string>(value.toString().value().get());
     }
     case Object::Type::TypedList: {
       return encode<TypedListObject>(
