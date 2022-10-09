@@ -45,7 +45,7 @@ TEST(ObjectTest, Binary) {
 
   EXPECT_EQ(bin.type(), Object::Type::Binary);
   EXPECT_TRUE(
-      std::equal(vec.begin(), vec.end(), bin.toBinary().value()->begin()));
+      std::equal(vec.begin(), vec.end(), bin.toBinary().value().get().begin()));
   BinaryObject bin2(std::vector<uint8_t>{0x0, 0x1, 0x2, 0x3, 0x4});
   EXPECT_EQ(bin.hash(), bin2.hash());
   EXPECT_TRUE(bin.equal(bin2));
@@ -144,7 +144,7 @@ TEST(ObjectTest, Date) {
 
   EXPECT_EQ(b.type(), Object::Type::Date);
   EXPECT_EQ(b.hash(), b2.hash());
-  EXPECT_EQ(b.toDate().value().count(), 100);
+  EXPECT_EQ(b.toDate().value().get().count(), 100);
   EXPECT_TRUE(b.hash() != b3.hash());
   EXPECT_TRUE(b.equal(b2));
   EXPECT_FALSE(b3.equal(b2));
@@ -170,7 +170,7 @@ TEST(ObjectTest, String) {
 
   EXPECT_EQ(b.type(), Object::Type::String);
   EXPECT_EQ(b.hash(), b2.hash());
-  EXPECT_TRUE(*b.toString().value() == "test");
+  EXPECT_TRUE(b.toString().value().get() == "test");
   EXPECT_TRUE(b.hash() != b3.hash());
   EXPECT_TRUE(b.equal(b2));
   EXPECT_FALSE(b3.equal(b2));
@@ -193,7 +193,7 @@ TEST(ObjectTest, Ref) {
   EXPECT_EQ(p.type(), Object::Type::Ref);
   EXPECT_TRUE(p.equal(p2));
   EXPECT_EQ(p.hash(), p2.hash());
-  EXPECT_TRUE(*(p.toRefDest().value()->toString().value()) == "ref");
+  EXPECT_TRUE(p.toRefDest().value()->toString().value().get() == "ref");
 }
 
 TEST(ObjectTest, UntypedList) {
@@ -226,7 +226,7 @@ TEST(ObjectTest, UntypedList) {
   EXPECT_EQ(p.hash(), p2.hash());
   EXPECT_TRUE(p.equal(p2));
   EXPECT_FALSE(p.equal(p3));
-  EXPECT_TRUE(p.toUntypedList().value()->size() == 3);
+  EXPECT_TRUE(p.toUntypedList().value().get().size() == 3);
   UntypedListObject p4;
   p4.emplace_back(std::make_unique<IntegerObject>(1));
   p4.emplace_back(std::make_unique<BooleanObject>(true));
@@ -264,7 +264,7 @@ TEST(ObjectTest, TypedList) {
   EXPECT_FALSE(p.equal(p2));
   EXPECT_FALSE(p.equal(p3));
   EXPECT_FALSE(p2.equal(p3));
-  EXPECT_TRUE(p.toTypedList().value()->values_.size() == 3);
+  EXPECT_TRUE(p.toTypedList().value().get().values_.size() == 3);
 
   TypedListObject p4;
   p4.emplace_back(std::make_unique<IntegerObject>(1));
@@ -283,7 +283,7 @@ TEST(ObjectTest, UntypedMap) {
 
   UntypedMapObject p(std::move(untyped_map1));
   EXPECT_EQ(p.type(), Object::Type::UntypedMap);
-  EXPECT_EQ(p.toUntypedMap().value()->size(), 1);
+  EXPECT_EQ(p.toUntypedMap().value().get().size(), 1);
   EXPECT_TRUE(p.toDebugString().size() > 0);
 
   untyped_map2.emplace(
@@ -291,10 +291,28 @@ TEST(ObjectTest, UntypedMap) {
                      std::make_unique<IntegerObject>(1)));
 
   UntypedMapObject p2(std::move(untyped_map2));
-  EXPECT_EQ(p2.toUntypedMap().value()->size(), 1);
+  EXPECT_EQ(p2.toUntypedMap().value().get().size(), 1);
 
   EXPECT_EQ(p.hash(), p2.hash());
   EXPECT_TRUE(p.equal(p2));
+
+  // heterogeneous lookup by string view.
+  EXPECT_EQ(p.toUntypedMap()
+                .value()
+                .get()
+                .find(absl::string_view("key1"))
+                ->second->toInteger()
+                .value()
+                .get(),
+            1);
+  EXPECT_EQ(p2.toUntypedMap()
+                .value()
+                .get()
+                .find("key1")
+                ->second->toInteger()
+                .value()
+                .get(),
+            1);
 }
 
 TEST(ObjectTest, TypedMap) {
@@ -311,7 +329,7 @@ TEST(ObjectTest, TypedMap) {
   EXPECT_TRUE(p.get("key1")->toInteger().value() == 1);
 
   EXPECT_EQ(p.type(), Object::Type::TypedMap);
-  EXPECT_EQ(p.toTypedMap().value()->field_name_and_value_.size(), 1);
+  EXPECT_EQ(p.toTypedMap().value().get().field_name_and_value_.size(), 1);
 
   map2.type_name_ = std::string("type1");
   map2.field_name_and_value_.emplace(
@@ -331,7 +349,7 @@ TEST(ObjectTest, TypedMap) {
   TypedMapObject p4;
   p4.emplace(std::make_unique<StringObject>(absl::string_view("key2")),
              std::make_unique<StringObject>(absl::string_view("key3")));
-  EXPECT_TRUE(*p4.get("key2")->toString().value() == std::string("key3"));
+  EXPECT_TRUE(p4.get("key2")->toString().value().get() == std::string("key3"));
 
   // p and p2 have the same hash value because they have the same type and
   // element size,
@@ -395,7 +413,7 @@ TEST(ObjectTest, Iterator) {
     const_actual.push_back(i);
   }
 
-  EXPECT_EQ(const_actual, *const_b.toString().value());
+  EXPECT_EQ(const_actual, const_b.toString().value().get());
 }
 
 }  // namespace Hessian2

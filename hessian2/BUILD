@@ -5,26 +5,27 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "byte_order_lib",
     srcs = [
-      "byte_order.h",
+        "byte_order.h",
     ],
     copts = DEFAULT_COPTS,
     deps = [
-    ]
+    ],
 )
 
 cc_library(
     name = "object_lib",
     srcs = [
-        "object.hpp"
+        "object.hpp",
     ],
     copts = DEFAULT_COPTS,
     deps = [
         "//common:common_lib",
         "//common:macros_lib",
-        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/container:node_hash_map",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
-    ]
+        "@com_google_absl//absl/types:optional",
+    ],
 )
 
 cc_library(
@@ -37,7 +38,7 @@ cc_library(
     deps = [
         ":byte_order_lib",
         "//common:common_lib",
-    ]
+    ],
 )
 
 cc_library(
@@ -50,7 +51,7 @@ cc_library(
         ":byte_order_lib",
         "//common:common_lib",
         "@com_google_absl//absl/strings",
-    ]
+    ],
 )
 
 cc_library(
@@ -62,7 +63,7 @@ cc_library(
     deps = [
         ":reader_lib",
         "@com_google_absl//absl/strings",
-    ]
+    ],
 )
 
 cc_library(
@@ -74,13 +75,13 @@ cc_library(
     deps = [
         ":writer_lib",
         "@com_google_absl//absl/strings",
-    ]
+    ],
 )
 
 cc_test(
     name = "string_reader_unittests",
     srcs = [
-      "string_reader_unittests.cc",
+        "string_reader_unittests.cc",
     ],
     copts = TEST_COPTS,
     deps = [
@@ -93,7 +94,7 @@ cc_test(
 cc_test(
     name = "string_writer_unittests",
     srcs = [
-      "string_writer_unittests.cc",
+        "string_writer_unittests.cc",
     ],
     copts = TEST_COPTS,
     deps = [
@@ -111,11 +112,11 @@ cc_library(
     copts = DEFAULT_COPTS,
     deps = [
         ":codec_lib",
-        "//hessian2/basic_codec:type_ref_lib",
         "//hessian2/basic_codec:def_ref_codec_lib",
-        "@com_google_absl//absl/types:optional",
+        "//hessian2/basic_codec:type_ref_lib",
         "@com_google_absl//absl/strings",
-    ]
+        "@com_google_absl//absl/types:optional",
+    ],
 )
 
 cc_library(
@@ -128,15 +129,15 @@ cc_library(
         ":object_lib",
         ":string_reader_lib",
         ":string_writer_lib",
-        "@com_google_absl//absl/types:optional",
         "@com_google_absl//absl/strings",
-    ]
+        "@com_google_absl//absl/types:optional",
+    ],
 )
 
 cc_test(
     name = "object_lib_test",
     srcs = [
-      "object_unittests.cc",
+        "object_unittests.cc",
     ],
     copts = TEST_COPTS,
     deps = [

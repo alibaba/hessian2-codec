@@ -191,11 +191,10 @@ bool Encoder::encode(const TypedListObject& value) {
   values_ref_.emplace(&value, values_ref_.size());
   auto typed_list = value.toTypedList();
   ABSL_ASSERT(typed_list.has_value());
-  auto typed_list_value = typed_list.value();
-  ABSL_ASSERT(typed_list_value != nullptr);
+  auto& typed_list_value = typed_list.value().get();
 
-  Object::TypeRef type_ref(typed_list_value->type_name_);
-  auto len = typed_list_value->values_.size();
+  Object::TypeRef type_ref(typed_list_value.type_name_);
+  auto len = typed_list_value.values_.size();
 
   if (len <= 7) {
     writer_->writeByte(static_cast<uint8_t>(0x70 + len));
@@ -209,7 +208,7 @@ bool Encoder::encode(const TypedListObject& value) {
   }
 
   for (size_t i = 0; i < len; i++) {
-    encode<Object>(*typed_list_value->values_[i]);
+    encode<Object>(*typed_list_value.values_[i]);
   }
 
   return true;
@@ -220,10 +219,9 @@ bool Encoder::encode(const UntypedListObject& value) {
   values_ref_.emplace(&value, values_ref_.size());
   auto untyped_list = value.toUntypedList();
   ABSL_ASSERT(untyped_list.has_value());
-  auto untyped_list_value = untyped_list.value();
-  ABSL_ASSERT(untyped_list_value != nullptr);
+  auto& untyped_list_value = untyped_list.value().get();
 
-  auto len = untyped_list_value->size();
+  auto len = untyped_list_value.size();
 
   if (len <= 7) {
     writer_->writeByte(static_cast<uint8_t>(0x78 + len));
@@ -233,7 +231,7 @@ bool Encoder::encode(const UntypedListObject& value) {
   }
 
   for (size_t i = 0; i < len; i++) {
-    encode<Object>(*(*untyped_list_value)[i]);
+    encode<Object>(*(untyped_list_value)[i]);
   }
 
   return true;

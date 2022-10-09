@@ -99,12 +99,11 @@ bool Encoder::encode(const TypedMapObject& value) {
   values_ref_.emplace(&value, values_ref_.size());
   auto typed_map = value.toTypedMap();
   ABSL_ASSERT(typed_map.has_value());
-  auto typed_map_value = typed_map.value();
-  ABSL_ASSERT(typed_map_value != nullptr);
+  auto& typed_map_value = typed_map.value().get();
   writer_->writeByte('M');
-  Object::TypeRef type_ref(typed_map_value->type_name_);
+  Object::TypeRef type_ref(typed_map_value.type_name_);
   encode<Object::TypeRef>(type_ref);
-  for (const auto& elem : typed_map_value->field_name_and_value_) {
+  for (const auto& elem : typed_map_value.field_name_and_value_) {
     encode<Object>(*elem.first);
     encode<Object>(*elem.second);
   }
@@ -117,10 +116,9 @@ bool Encoder::encode(const UntypedMapObject& value) {
   values_ref_.emplace(&value, values_ref_.size());
   auto untyped_map = value.toUntypedMap();
   ABSL_ASSERT(untyped_map.has_value());
-  auto untyped_map_value = untyped_map.value();
-  ABSL_ASSERT(untyped_map_value != nullptr);
+  auto& untyped_map_value = untyped_map.value().get();
   writer_->writeByte('H');
-  for (const auto& elem : *untyped_map_value) {
+  for (const auto& elem : untyped_map_value) {
     encode<Object>(*elem.first);
     encode<Object>(*elem.second);
   }

@@ -47,11 +47,10 @@ bool Encoder::encode(const ClassInstanceObject& value) {
   values_ref_.emplace(&value, values_ref_.size());
   auto class_instance = value.toClassInstance();
   ABSL_ASSERT(class_instance.has_value());
-  auto class_instance_value = class_instance.value();
-  ABSL_ASSERT(class_instance_value != nullptr);
+  auto& class_instance_value = class_instance.value().get();
 
-  encode<Object::RawDefinition>(*class_instance_value->def_);
-  for (const auto& value : class_instance_value->data_) {
+  encode<Object::RawDefinition>(*class_instance_value.def_);
+  for (const auto& value : class_instance_value.data_) {
     encode<Object>(*value);
   }
   return true;
