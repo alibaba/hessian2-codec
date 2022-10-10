@@ -4,9 +4,24 @@ def load_third_party_repositories():
     # abseil-cpp
     http_archive(
         name = "com_google_absl",
-        urls = ["https://github.com/abseil/abseil-cpp/archive/61c9bf3e3e1c28a4aa6d7f1be4b37fd473bb5529.tar.gz"],  # 2019-06-05
-        strip_prefix = "abseil-cpp-61c9bf3e3e1c28a4aa6d7f1be4b37fd473bb5529",
-        sha256 = "7ddf863ddced6fa5bf7304103f9c7aa619c20a2fcf84475512c8d3834b9d14fa",
+        urls = ["https://github.com/abseil/abseil-cpp/archive/6f43f5bb398b6685575b36874e36cf1695734df1.tar.gz"],  # 2022-04-04
+        strip_prefix = "abseil-cpp-6f43f5bb398b6685575b36874e36cf1695734df1",
+        sha256 = "5ca73792af71ab962ee81cdf575f79480704b8fb87e16ca8f1dc1e9b6822611e",
+    )
+
+    # Bazel Skylib. Deps of "com_google_absl".
+    http_archive(
+        name = "bazel_skylib",
+        urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/1.2.1/bazel-skylib-1.2.1.tar.gz"],
+        sha256 = "f7be3474d42aae265405a592bb7da8e171919d74c16f082a5457840f06054728",
+    )
+
+    # Bazel platform rules. Deps of "com_google_absl".
+    http_archive(
+        name = "platforms",
+        sha256 = "b601beaf841244de5c5a50d2b2eddd34839788000fa1be4260ce6603ca0d8eb7",
+        strip_prefix = "platforms-98939346da932eef0b54cf808622f5bb0928f00b",
+        urls = ["https://github.com/bazelbuild/platforms/archive/98939346da932eef0b54cf808622f5bb0928f00b.zip"],
     )
 
     http_archive(

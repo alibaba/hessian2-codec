@@ -16,16 +16,14 @@ load(
     "ABSL_MSVC_TEST_FLAGS",
 )
 
-WERROR = ["-Werror=return-type", "-Werror=switch", "-Werror=sign-compare", "-Werror=type-limits", "-Werror=old-style-cast", "-Werror=unused-parameter"]
-
 DEFAULT_COPTS = select({
     "//:windows": ABSL_MSVC_FLAGS,
     "//:llvm_compiler": ABSL_LLVM_FLAGS,
-    "//conditions:default": ABSL_GCC_FLAGS + WERROR,
+    "//conditions:default": ABSL_GCC_FLAGS,
 })
 
 TEST_COPTS = DEFAULT_COPTS + select({
     "//:windows": ABSL_MSVC_TEST_FLAGS,
     "//:llvm_compiler": ABSL_LLVM_TEST_FLAGS,
-    "//conditions:default": ABSL_GCC_TEST_FLAGS + WERROR,
+    "//conditions:default": ABSL_GCC_TEST_FLAGS,
 })

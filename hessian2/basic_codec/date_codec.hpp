@@ -20,7 +20,8 @@ std::unique_ptr<std::chrono::seconds> Decoder::decode();
 template <>
 std::unique_ptr<std::chrono::hours> Decoder::decode();
 
-#if _LIBCPP_STD_VER > 17
+#if defined(_LIBCPP_STD_VER) && _LIBCPP_STD_VER > 17
+
 template <>
 std::unique_ptr<std::chrono::days> Decoder::decode();
 
@@ -46,7 +47,8 @@ bool Encoder::encode(const std::chrono::seconds &value);
 template <>
 bool Encoder::encode(const std::chrono::hours &value);
 
-#if _LIBCPP_STD_VER > 17
+#if defined(_LIBCPP_STD_VER) && _LIBCPP_STD_VER > 17
+
 template <>
 bool Encoder::encode(const std::chrono::days &value);
 

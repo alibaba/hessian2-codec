@@ -13,7 +13,7 @@ build --action_env=CXX
 build --action_env=PATH
 build --enable_platform_specific_config
 
-build --copt="-Wall"
+# All warnings as errors.
 build --copt="-Werror"
 
 # Linux
