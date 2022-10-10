@@ -13,6 +13,9 @@ build --action_env=CXX
 build --action_env=PATH
 build --enable_platform_specific_config
 
+build --copt="-Wall"
+build --copt="-Werror"
+
 # Linux
 build:linux --cxxopt=-std=c++17
 
