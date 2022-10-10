@@ -4,10 +4,11 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
-  name = "com_alibaba_hessian2_codec",
-  commit = "acab3fdcfe1f645729578949f61252353174a8c1",
-  remote = "https://github.com/alibaba/hessian2-codec.git"
+    name = "com_alibaba_hessian2_codec",
+    commit = "acab3fdcfe1f645729578949f61252353174a8c1",
+    remote = "https://github.com/alibaba/hessian2-codec.git",
 )
 
 load("@com_alibaba_hessian2_codec//bazel:third_party_repositories.bzl", "load_third_party_repositories")
+
 load_third_party_repositories()
