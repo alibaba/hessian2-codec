@@ -16,13 +16,11 @@
 #include "common/common.h"
 #include "common/macros.h"
 
-#include <iostream>
-
 namespace Hessian2 {
 
-constexpr char* UntypedMapMagicString = "untypedmap";
-constexpr char* UntypedListMagicString = "untypedlist";
-constexpr char* NullMagicString = "null";
+constexpr const char* UntypedMapMagicString = "untypedmap";
+constexpr const char* UntypedListMagicString = "untypedlist";
+constexpr const char* NullMagicString = "null";
 
 template <class T>
 using OptConstRef = absl::optional<std::reference_wrapper<const T>>;
@@ -398,7 +396,7 @@ class LongObject : public Object {
 
   // Object
   GENERATE_TRIVIAL_METHOD(Type::Long, int64_t, Long, GENERATE_STD_HASH);
-  virtual std::string toDebugString() const {
+  std::string toDebugString() const override {
     return absl::StrFormat("Type: long, value[%d]", data_);
   }
 
@@ -413,7 +411,7 @@ class BinaryObject : public Object {
   BinaryObject(std::unique_ptr<Binary>&& data) : data_(std::move(*data)) {}
   virtual ~BinaryObject() = default;
   GENERATE_TRIVIAL_METHOD(Type::Binary, Binary, Binary, DO_NOT_GENERATE_HASH);
-  virtual size_t hash() const {
+  size_t hash() const override {
     // TODO(tianqian.zyf:) Reduce CPU overhead associated with hash calculations
     static size_t hash = 0;
     if (hash != 0) {
@@ -426,8 +424,7 @@ class BinaryObject : public Object {
     }
     return hash;
   }
-
-  virtual std::string toDebugString() const {
+  std::string toDebugString() const override {
     // By default, only the first 16 bytes are output
     size_t limit_len = 16;
     std::ostringstream ostream;

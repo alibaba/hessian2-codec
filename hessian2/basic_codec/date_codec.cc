@@ -65,7 +65,7 @@ std::unique_ptr<std::chrono::hours> Decoder::decode() {
   return readDate<std::chrono::hours>(reader_);
 }
 
-#if _LIBCPP_STD_VER > 17
+#if defined(_LIBCPP_STD_VER) && _LIBCPP_STD_VER > 17
 template <>
 std::unique_ptr<std::chrono::days> Decoder::decode() {
   return readDate<std::chrono::days>(reader_);
@@ -119,7 +119,8 @@ bool Encoder::encode(const std::chrono::hours &value) {
   return true;
 }
 
-#if _LIBCPP_STD_VER > 17
+#if defined(_LIBCPP_STD_VER) && _LIBCPP_STD_VER > 17
+
 template <>
 bool Encoder::encode(const std::chrono::days &value) {
   writeDate<std::chrono::days>(writer_, value);
