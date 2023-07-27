@@ -114,8 +114,9 @@ std::string unescapeFourBytesUtf8Char(absl::string_view in) {
           (static_cast<uint32_t>(in[index + 5] & 0x3F));
 
       const uint32_t code_point =
-          (static_cast<uint32_t>(high_surrogate & 0x3FF) << 10) |
-          (static_cast<uint32_t>(low_surrogate & 0x3FF)) + 0x10000;
+          ((static_cast<uint32_t>(high_surrogate & 0x3FF) << 10) |
+           (static_cast<uint32_t>(low_surrogate & 0x3FF))) +
+          0x10000;
 
       // Covert the code point to 4 bytes UTF-8.
       out.push_back(static_cast<char>(0xF0 | ((code_point >> 18))));
