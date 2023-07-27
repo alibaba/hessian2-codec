@@ -33,9 +33,9 @@ static const uint8_t UTF_8_CHAR_LENGTHS[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
  * four bytes char offsets are also calculated. This is only used for
  * 'encode' function.
  */
-int64_t getUtf8StringLength(absl::string_view in,
-                            Uint64Vector &per_chunk_bytes_offsets,
-                            Uint64Vector &four_bytes_char_offsets) {
+int64_t getUtf8StringLengthAndPerChunkOffsets(
+    absl::string_view in, Uint64Vector &per_chunk_bytes_offsets,
+    Uint64Vector &four_bytes_char_offsets) {
   int64_t utf8_length = 0;
   size_t raw_bytes_length = 0;
 
@@ -80,10 +80,75 @@ int64_t getUtf8StringLength(absl::string_view in,
 }
 
 /**
- * Rewrite 4 bytes UTF-8 characters of UTF-8 string.
+ * Rewrite UTF-8 string. Found if there are surrogate pairs in the string and
+ * covert them to valid 4 bytes UTF-8 characters from two invalid 3 bytes UTF-8.
  */
-std::string rewriteUtf8String(absl::string_view in,
-                              const Uint64Vector &four_bytes_char_offsets) {
+std::string unescapeFourBytesUtf8Char(absl::string_view in) {
+  const size_t in_size = in.size();
+
+  std::string out;
+  out.reserve(in_size);
+
+  for (size_t index = 0; index < in_size;) {
+    const uint8_t code = static_cast<uint8_t>(in[index]);
+    const uint8_t char_length = UTF_8_CHAR_LENGTHS[code >> 3];
+
+    // Check whether the current two 3 bytes UTF-8 is surrogate pair. The prefix
+    // 6bit of surrogate is 0b110110 or 0b110111. 4bit in the first byte of
+    // UTF-8 character and 2bit in the second byte of UTF-8 character.
+
+    if ((char_length == 3) && (index + 6 <= in_size) &&
+        (static_cast<uint8_t>(in[index + 0]) == 0xED) &&
+        (static_cast<uint8_t>((in[index + 1]) & 0xF0) == 0xA0) &&
+        (static_cast<uint8_t>(in[index + 3]) == 0xED) &&
+        (static_cast<uint8_t>((in[index + 4]) & 0xF0) == 0xB0)) {
+      // Extract the high and low surrogate.
+      const uint32_t high_surrogate =
+          (static_cast<uint32_t>(in[index + 0] & 0x0F) << 12) |
+          (static_cast<uint32_t>(in[index + 1] & 0x3F) << 6) |
+          (static_cast<uint32_t>(in[index + 2] & 0x3F));
+
+      const uint32_t low_surrogate =
+          (static_cast<uint32_t>(in[index + 3] & 0x0F) << 12) |
+          (static_cast<uint32_t>(in[index + 4] & 0x3F) << 6) |
+          (static_cast<uint32_t>(in[index + 5] & 0x3F));
+
+      const uint32_t code_point =
+          (static_cast<uint32_t>(high_surrogate & 0x3FF) << 10) |
+          (static_cast<uint32_t>(low_surrogate & 0x3FF)) + 0x10000;
+
+      // Covert the code point to 4 bytes UTF-8.
+      out.push_back(static_cast<char>(0xF0 | ((code_point >> 18))));
+      out.push_back(static_cast<char>(0x80 | ((code_point >> 12) & 0x3F)));
+      out.push_back(static_cast<char>(0x80 | ((code_point >> 6) & 0x3F)));
+      out.push_back(static_cast<char>(0x80 | ((code_point & 0x3F))));
+
+      index += 6;
+      continue;
+    }
+
+    // In other cases copy the bytes to the output string directly.
+    if (char_length > 0 && index + char_length <= in_size) {
+      for (size_t inner_i = 0; inner_i < char_length; inner_i++) {
+        out.push_back(in[index + inner_i]);
+      }
+      index += char_length;
+    } else {
+      // This should not happen because we have checked the validity of UTF-8
+      // string before.
+      return "";
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Convert 4 bytes UTF-8 character to UTF-16 surrogate pair and then convert
+ * UTF-16 surrogate pair to two invalid 3 bytes UTF-8.
+ */
+std::string escapeFourBytesUtf8Char(
+    absl::string_view in, const Uint64Vector &four_bytes_char_offsets) {
   std::string out;
   out.reserve(in.size() + four_bytes_char_offsets.size() * 3);
 
@@ -105,8 +170,15 @@ std::string rewriteUtf8String(absl::string_view in,
 
     // Covert the code point to UTF-16 surrogate pair.
     code_point -= 0x10000;
+    // The value range of 'surrogate_pair' is 0xD800-0xDFFF, it is reserved by
+    // Unicode standard for UTF-16 surrogate pair, so it is safe to use it as a
+    // flag.
     static const uint16_t surrogate_pair[2] = {
+        // 6bit as the prefix and 10bit as the suffix (0b1101 10xx xxxx xxxx).
+        // The value range is 0xD800-0xDBFF.
         static_cast<uint16_t>(0xD800 + (code_point >> 10)),
+        // 6bit as the prefix and 10bit as the suffix (0b1101 11xx xxxx xxxx).
+        // The value range is 0xDC00-0xDFFF.
         static_cast<uint16_t>(0xDC00 + (code_point & 0x3FF))};
 
     // Covert high and low surrogate to UTF-8.
@@ -119,7 +191,10 @@ std::string rewriteUtf8String(absl::string_view in,
     // https://github.com/apache/dubbo-hessian-lite/blob/ca001b4658227d5122f85bcb45032a0dac4faf0d/src/main/java/com/alibaba/com/caucho/hessian/io/Hessian2Output.java#L1360
     for (auto utf16_char : surrogate_pair) {
       // Needn't to check the range of 'utf16_char', because it must larger
-      // than 0x800 and less than 0xFFFF， so it must be 3 bytes UTF-8.
+      // than 0x800 and less than 0xFFFF，so it must be 3 bytes UTF-8. And
+      // note because the value range is 0xD800-0xDFFF, so these UTF-8
+      // characters actually are invalid and should not appear in the correct
+      // UTF-8 string.
       out.push_back(static_cast<char>(0xE0 | ((utf16_char >> 12))));
       out.push_back(static_cast<char>(0x80 | ((utf16_char >> 6) & 0x3F)));
       out.push_back(static_cast<char>(0x80 | ((utf16_char & 0x3F))));
@@ -137,13 +212,9 @@ std::string rewriteUtf8String(absl::string_view in,
 /**
  * Get number of UTF-8 characters in string. This is only used for
  * 'finalReadUtf8String' function.
- *
- * @param in The input string.
- * @return pair of number of UTF-8 characters and number of raw bytes. If the
- *         input string is not a valid UTF-8 string, the number of UTF-8
- *         characters is -1.
  */
-std::pair<int64_t, size_t> getUtf8StringLength(absl::string_view in) {
+std::pair<int64_t, size_t> getUtf8StringLength(absl::string_view in,
+                                               bool &has_surrogate) {
   int64_t utf8_length = 0;
   size_t raw_bytes_length = 0;
 
@@ -151,6 +222,11 @@ std::pair<int64_t, size_t> getUtf8StringLength(absl::string_view in) {
 
   for (; raw_bytes_length < in_size;) {
     const uint8_t code = static_cast<uint8_t>(in[raw_bytes_length]);
+
+    if (code == 0xED) {
+      has_surrogate = true;
+    }
+
     const uint8_t char_length = UTF_8_CHAR_LENGTHS[code >> 3];
 
     if (char_length == 0) {
@@ -166,7 +242,8 @@ std::pair<int64_t, size_t> getUtf8StringLength(absl::string_view in) {
 
 // TODO(tianqian.zyf): Do I need to check the UTF-8 validity?
 // Ref: https://www.cl.cam.ac.uk/~mgk25/ucs/utf8_check.c
-bool finalReadUtf8String(std::string &output, Reader &reader, size_t length) {
+bool finalReadUtf8String(std::string &output, bool &has_surrogate,
+                         Reader &reader, size_t length) {
   // The length length refers to the length of utF8 characters,
   // and utF8 can be represented by up to 4 bytes, so it is length * 4
   output.reserve(length * 4);
@@ -178,11 +255,10 @@ bool finalReadUtf8String(std::string &output, Reader &reader, size_t length) {
 
     output.resize(current_pos + length);
     // Read the 'length' bytes from the reader buffer to the output.
-    reader.readNBytes(&output[current_pos], length);
+    reader.readNBytes(output.data() + current_pos, length);
 
-    const auto output_view = absl::string_view(output).substr(current_pos);
-
-    const auto result = getUtf8StringLength(output_view);
+    const auto result = getUtf8StringLength(
+        absl::string_view(output).substr(current_pos), has_surrogate);
     const int64_t utf8_length = result.first;
     const size_t raw_bytes_length = result.second;
 
@@ -197,7 +273,7 @@ bool finalReadUtf8String(std::string &output, Reader &reader, size_t length) {
       }
       output.resize(current_pos + raw_bytes_length);
       // Read the 'padding_size' bytes from the reader buffer to the output.
-      reader.readNBytes(&output[0] + current_pos + length, padding_size);
+      reader.readNBytes(output.data() + current_pos + length, padding_size);
     }
 
     length -= utf8_length;
@@ -205,10 +281,11 @@ bool finalReadUtf8String(std::string &output, Reader &reader, size_t length) {
   return true;
 }
 
-bool readChunkString(std::string &output, Reader &reader, size_t length,
-                     bool is_last_chunk);
+bool readChunkString(std::string &output, bool &has_surrogate, Reader &reader,
+                     size_t length, bool is_last_chunk);
 
-bool decodeStringWithReader(std::string &out, Reader &reader) {
+bool decodeStringWithReader(std::string &out, bool &has_surrogate,
+                            Reader &reader) {
   size_t delta_length = 0;
   auto ret = reader.read<uint8_t>();
   if (!ret.first) {
@@ -249,7 +326,7 @@ bool decodeStringWithReader(std::string &out, Reader &reader) {
     case 0x1d:
     case 0x1e:
     case 0x1f: {
-      return readChunkString(out, reader, code - 0x00, true);
+      return readChunkString(out, has_surrogate, reader, code - 0x00, true);
     }
 
     // ::= [x30-x33] <utf8-data> # string of length
@@ -262,7 +339,7 @@ bool decodeStringWithReader(std::string &out, Reader &reader) {
         return false;
       }
       delta_length = (code - 0x30) * 256 + res.second;
-      return readChunkString(out, reader, delta_length, true);
+      return readChunkString(out, has_surrogate, reader, delta_length, true);
     }
 
     case 0x53:  // 0x53 is 'S', 'S' b1 b0 <utf8-data>
@@ -271,7 +348,7 @@ bool decodeStringWithReader(std::string &out, Reader &reader) {
       if (!res.first) {
         return false;
       }
-      return readChunkString(out, reader, res.second, true);
+      return readChunkString(out, has_surrogate, reader, res.second, true);
     }
     case 0x52:  // 0x52 b1 b0 <utf8-data>
     {
@@ -279,15 +356,15 @@ bool decodeStringWithReader(std::string &out, Reader &reader) {
       if (!res.first) {
         return false;
       }
-      return readChunkString(out, reader, res.second, false);
+      return readChunkString(out, has_surrogate, reader, res.second, false);
     }
   }
   return false;
 }
 
-bool readChunkString(std::string &output, Reader &reader, size_t length,
-                     bool is_last_chunk) {
-  auto ret = finalReadUtf8String(output, reader, length);
+bool readChunkString(std::string &output, bool &has_surrogate, Reader &reader,
+                     size_t length, bool is_last_chunk) {
+  auto ret = finalReadUtf8String(output, has_surrogate, reader, length);
   if (!ret) {
     return false;
   }
@@ -296,7 +373,7 @@ bool readChunkString(std::string &output, Reader &reader, size_t length,
     return true;
   }
 
-  return decodeStringWithReader(output, reader);
+  return decodeStringWithReader(output, has_surrogate, reader);
 }
 
 }  // namespace
@@ -304,9 +381,21 @@ bool readChunkString(std::string &output, Reader &reader, size_t length,
 template <>
 std::unique_ptr<std::string> Decoder::decode() {
   auto out = std::make_unique<std::string>();
-  if (!decodeStringWithReader(*out.get(), *reader_.get())) {
+  bool has_surrogate = false;
+
+  if (!decodeStringWithReader(*out.get(), has_surrogate, *reader_.get())) {
     return nullptr;
   }
+
+  if (has_surrogate) {
+    std::string new_out = unescapeFourBytesUtf8Char(absl::string_view(*out));
+    if (new_out.empty()) {
+      return nullptr;
+    }
+
+    return std::make_unique<std::string>(std::move(new_out));
+  }
+
   return out;
 }
 
@@ -320,8 +409,8 @@ bool Encoder::encode(const absl::string_view &data) {
   Uint64Vector per_chunk_bytes_offsets;
   Uint64Vector four_bytes_char_offsets;
 
-  int64_t length = getUtf8StringLength(data, per_chunk_bytes_offsets,
-                                       four_bytes_char_offsets);
+  int64_t length = getUtf8StringLengthAndPerChunkOffsets(
+      data, per_chunk_bytes_offsets, four_bytes_char_offsets);
   if (length == -1) {
     return false;
   }
@@ -330,7 +419,7 @@ bool Encoder::encode(const absl::string_view &data) {
 
   std::string rewrite_data;
   if (!four_bytes_char_offsets.empty()) {
-    rewrite_data = rewriteUtf8String(data, four_bytes_char_offsets);
+    rewrite_data = escapeFourBytesUtf8Char(data, four_bytes_char_offsets);
     if (rewrite_data.empty()) {
       return false;
     }
@@ -338,8 +427,8 @@ bool Encoder::encode(const absl::string_view &data) {
     per_chunk_bytes_offsets.clear();
     four_bytes_char_offsets.clear();
 
-    length = getUtf8StringLength(rewrite_data, per_chunk_bytes_offsets,
-                                 four_bytes_char_offsets);
+    length = getUtf8StringLengthAndPerChunkOffsets(
+        rewrite_data, per_chunk_bytes_offsets, four_bytes_char_offsets);
     data_view = rewrite_data;
   }
 
