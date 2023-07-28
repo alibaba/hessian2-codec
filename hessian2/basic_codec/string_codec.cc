@@ -64,7 +64,7 @@ int64_t getUtf8StringLengthAndPerChunkOffsets(
 
     // Check whether the current chunk is full and record the bytes offset of
     // the current chunk.
-    if (current_chunk == STRING_CHUNK_SIZE) {
+    if (current_chunk >= STRING_CHUNK_SIZE) {
       per_chunk_bytes_offsets.push_back(raw_bytes_length);
       current_chunk = 0;
     }
@@ -77,6 +77,45 @@ int64_t getUtf8StringLengthAndPerChunkOffsets(
   }
 
   return utf8_length;
+}
+
+/**
+ * Get number of UTF-8 characters in string. This is only used for
+ * 'finalReadUtf8String' function.
+ */
+std::pair<int64_t, size_t> getUtf8StringLength(absl::string_view in,
+                                               bool &has_surrogate) {
+  int64_t utf8_length = 0;
+  size_t raw_bytes_length = 0;
+
+  const size_t in_size = in.size();
+
+  for (; raw_bytes_length < in_size;) {
+    const uint8_t code = static_cast<uint8_t>(in[raw_bytes_length]);
+
+    // This is a cheap but coarse check for surrogate pairs.
+    // The 'E' means 0b1110 is the prefix of 3 bytes UTF-8 character.
+    // The 'D' means 0b1101 is the prefix of surrogate pair.
+    // But 6bit is necessary to determine whether it is surrogate pair.
+    // So we need to check the next byte. But the next byte may be not
+    // available directly which makes the check more complex. So we just
+    // check the first byte here and scan the whole string after the
+    // string is read from the reader.
+    if (code == 0xED) {
+      has_surrogate = true;
+    }
+
+    const uint8_t char_length = UTF_8_CHAR_LENGTHS[code >> 3];
+
+    if (char_length == 0) {
+      return {-1, 0};
+    }
+
+    utf8_length++;
+    raw_bytes_length += char_length;
+  }
+
+  return {utf8_length, raw_bytes_length};
 }
 
 /**
@@ -190,7 +229,7 @@ std::string escapeFourBytesUtf8Char(
     // Java hessian2 library, so we need to do the same thing even it is
     // wrong. Ref:
     // https://github.com/apache/dubbo-hessian-lite/blob/ca001b4658227d5122f85bcb45032a0dac4faf0d/src/main/java/com/alibaba/com/caucho/hessian/io/Hessian2Output.java#L1360
-    for (auto utf16_char : surrogate_pair) {
+    for (const auto utf16_char : surrogate_pair) {
       // Needn't to check the range of 'utf16_char', because it must larger
       // than 0x800 and less than 0xFFFF，so it must be 3 bytes UTF-8. And
       // note because the value range is 0xD800-0xDFFF, so these UTF-8
@@ -208,37 +247,6 @@ std::string escapeFourBytesUtf8Char(
   out.append(last_segment.data(), last_segment.size());
 
   return out;
-}
-
-/**
- * Get number of UTF-8 characters in string. This is only used for
- * 'finalReadUtf8String' function.
- */
-std::pair<int64_t, size_t> getUtf8StringLength(absl::string_view in,
-                                               bool &has_surrogate) {
-  int64_t utf8_length = 0;
-  size_t raw_bytes_length = 0;
-
-  const size_t in_size = in.size();
-
-  for (; raw_bytes_length < in_size;) {
-    const uint8_t code = static_cast<uint8_t>(in[raw_bytes_length]);
-
-    if (code == 0xED) {
-      has_surrogate = true;
-    }
-
-    const uint8_t char_length = UTF_8_CHAR_LENGTHS[code >> 3];
-
-    if (char_length == 0) {
-      return {-1, 0};
-    }
-
-    utf8_length++;
-    raw_bytes_length += char_length;
-  }
-
-  return {utf8_length, raw_bytes_length};
 }
 
 // TODO(tianqian.zyf): Do I need to check the UTF-8 validity?
