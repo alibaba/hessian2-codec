@@ -34,6 +34,7 @@ jobs:
       - name: build
         run: |
           bazel build //hessian2/...
+          bazel build --cxxopt="-DCOMPATIBLE_WITH_JAVA_HESSIAN_LITE" //hessian2/...
 
       - name: demo-build
         run: |
@@ -42,6 +43,7 @@ jobs:
       - name: test
         run: |
           bazel test //hessian2/...
+          bazel test --cxxopt="-DCOMPATIBLE_WITH_JAVA_HESSIAN_LITE" //hessian2/...
 
       - name: Install lcov and genhtml and link llvm
         run: |

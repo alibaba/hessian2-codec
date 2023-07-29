@@ -26,7 +26,8 @@ echo "    DATA_DIR=${DATA_DIR}"
 echo "    TARGETS=${COVERAGE_TARGETS}"
 
 echo "Generating coverage data..."
-bazel coverage ${COVERAGE_TARGETS} --test_output=errors
+bazel coverage --test_output=errors --cxxopt="-DCOMPATIBLE_WITH_JAVA_HESSIAN_LITE" \
+  ${COVERAGE_TARGETS}
 
 rm -rf ${OUTPUT_DIR}
 mkdir -p ${OUTPUT_DIR}

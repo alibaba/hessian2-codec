@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-
 public class TestCustomReply {
 
     private Hessian2Output output;
@@ -81,13 +80,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedListHasNull() throws Exception {
-        Object[] o = new Object[]{new A0(), new A1(), null};
+        Object[] o = new Object[] { new A0(), new A1(), null };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableListHasNull() throws Exception {
-        Object[] o = new Object[]{new A0(), new A1(), null};
+        Object[] o = new Object[] { new A0(), new A1(), null };
         if (output.addRef(o)) {
             return;
         }
@@ -102,7 +101,7 @@ public class TestCustomReply {
     }
 
     public void customReplyUntypedFixedListHasNull() throws Exception {
-        Object[] o = new Object[]{new A0(), new A1(), null};
+        Object[] o = new Object[] { new A0(), new A1(), null };
         if (output.addRef(o)) {
             return;
         }
@@ -117,7 +116,7 @@ public class TestCustomReply {
     }
 
     public void customReplyUntypedVariableListHasNull() throws Exception {
-        Object[] o = new Object[]{new A0(), new A1(), null};
+        Object[] o = new Object[] { new A0(), new A1(), null };
         if (output.addRef(o)) {
             return;
         }
@@ -132,13 +131,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_A0() throws Exception {
-        A0[] o = new A0[]{new A0(), new A0(), null};
+        A0[] o = new A0[] { new A0(), new A0(), null };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableList_A0() throws Exception {
-        A0[] o = new A0[]{new A0(), new A0(), null};
+        A0[] o = new A0[] { new A0(), new A0(), null };
         if (output.addRef(o)) {
             return;
         }
@@ -153,13 +152,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_int() throws Exception {
-        int[] o = new int[]{1, 2, 3};
+        int[] o = new int[] { 1, 2, 3 };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableList_int() throws Exception {
-        int[] o = new int[]{1, 2, 3};
+        int[] o = new int[] { 1, 2, 3 };
         if (output.addRef(o)) {
             return;
         }
@@ -174,13 +173,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_long() throws Exception {
-        long[] o = new long[]{1, 2, 3};
+        long[] o = new long[] { 1, 2, 3 };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableList_long() throws Exception {
-        long[] o = new long[]{1, 2, 3};
+        long[] o = new long[] { 1, 2, 3 };
         if (output.addRef(o)) {
             return;
         }
@@ -195,13 +194,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_float() throws Exception {
-        float[] o = new float[]{1, 2, 3};
+        float[] o = new float[] { 1, 2, 3 };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableList_float() throws Exception {
-        float[] o = new float[]{1, 2, 3};
+        float[] o = new float[] { 1, 2, 3 };
         if (output.addRef(o)) {
             return;
         }
@@ -216,13 +215,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_double() throws Exception {
-        double[] o = new double[]{1, 2, 3};
+        double[] o = new double[] { 1, 2, 3 };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableList_double() throws Exception {
-        double[] o = new double[]{1, 2, 3};
+        double[] o = new double[] { 1, 2, 3 };
         if (output.addRef(o)) {
             return;
         }
@@ -237,13 +236,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_short() throws Exception {
-        short[] o = new short[]{1, 2, 3};
+        short[] o = new short[] { 1, 2, 3 };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableList_short() throws Exception {
-        short[] o = new short[]{1, 2, 3};
+        short[] o = new short[] { 1, 2, 3 };
         if (output.addRef(o)) {
             return;
         }
@@ -258,7 +257,7 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_char() throws Exception {
-        char[] o = new char[]{'1', '2', '3'};
+        char[] o = new char[] { '1', '2', '3' };
         if (output.addRef(o)) {
             return;
         }
@@ -273,7 +272,7 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedVariableList_char() throws Exception {
-        char[] o = new char[]{'1', '2', '3'};
+        char[] o = new char[] { '1', '2', '3' };
         if (output.addRef(o)) {
             return;
         }
@@ -288,13 +287,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_boolean() throws Exception {
-        boolean[] o = new boolean[]{true, false, true};
+        boolean[] o = new boolean[] { true, false, true };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableList_boolean() throws Exception {
-        boolean[] o = new boolean[]{true, false, true};
+        boolean[] o = new boolean[] { true, false, true };
         if (output.addRef(o)) {
             return;
         }
@@ -309,13 +308,13 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_date() throws Exception {
-        Date[] o = new Date[]{new Date(1560864000), new Date(1560864000), new Date(1560864000)};
+        Date[] o = new Date[] { new Date(1560864000), new Date(1560864000), new Date(1560864000) };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedVariableList_date() throws Exception {
-        Date[] o = new Date[]{new Date(1560864000), new Date(1560864000), new Date(1560864000)};
+        Date[] o = new Date[] { new Date(1560864000), new Date(1560864000), new Date(1560864000) };
         if (output.addRef(o)) {
             return;
         }
@@ -330,13 +329,14 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_arrays() throws Exception {
-        int[][][] o = new int[][][]{{{1, 2, 3}, {4, 5, 6, 7}}, {{8, 9, 10}, {11, 12, 13, 14}}};
+        int[][][] o = new int[][][] { { { 1, 2, 3 }, { 4, 5, 6, 7 } }, { { 8, 9, 10 }, { 11, 12, 13, 14 } } };
         output.writeObject(o);
         output.flush();
     }
 
     public void customReplyTypedFixedList_A0arrays() throws Exception {
-        A0[][][] o = new A0[][][]{{{new A0(), new A0(), new A0()}, {new A0(), new A0(), new A0(), null}}, {{new A0()}, {new A0()}}};
+        A0[][][] o = new A0[][][] { { { new A0(), new A0(), new A0() }, { new A0(), new A0(), new A0(), null } },
+                { { new A0() }, { new A0() } } };
         output.writeObject(o);
         output.flush();
     }
@@ -348,7 +348,7 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_Object() throws Exception {
-        Object[] o = new Object[]{new A0()};
+        Object[] o = new Object[] { new A0() };
         output.writeObject(o);
         output.flush();
     }
@@ -360,7 +360,7 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_BigInteger() throws Exception {
-        BigInteger[] integers = new BigInteger[]{
+        BigInteger[] integers = new BigInteger[] {
                 new BigInteger("1234"),
                 new BigInteger("12347890"),
                 new BigInteger("123478901234"),
@@ -379,7 +379,7 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_CustomObject() throws Exception {
-        Object[] objects = new Object[]{
+        Object[] objects = new Object[] {
                 new BigInteger("1234"),
                 new BigInteger("-12347890"),
                 new BigInteger("0"),
@@ -410,7 +410,7 @@ public class TestCustomReply {
     }
 
     public void customReplyTypedFixedList_BigDecimal() throws Exception {
-        BigDecimal[] decimals = new BigDecimal[]{
+        BigDecimal[] decimals = new BigDecimal[] {
                 new BigDecimal("123.4"),
                 new BigDecimal("123.45"),
                 new BigDecimal("123.456"),
@@ -422,11 +422,6 @@ public class TestCustomReply {
     public void customReplyTypedFixedDateNull() throws Exception {
         DateDemo demo = new DateDemo("zhangshan", null, null);
         output.writeObject(demo);
-        output.flush();
-    }
-
-    public void customReplyStringEmoji() throws Exception {
-        output.writeObject(TestString.getEmojiTestString());
         output.flush();
     }
 
@@ -444,6 +439,16 @@ public class TestCustomReply {
 
     public void customReplyComplexString() throws Exception {
         output.writeObject(TestString.getComplexString());
+        output.flush();
+    }
+
+    public void customReplySuperComplexString() throws Exception {
+        output.writeObject(TestString.getSuperComplexString());
+        output.flush();
+    }
+
+    public void customReplyStringEmoji() throws Exception {
+        output.writeObject(TestString.getEmojiTestString());
         output.flush();
     }
 
@@ -546,8 +551,8 @@ class TypedListTest implements Serializable {
 
     TypedListTest() {
         this.a = new A0();
-        this.list = new A0[][]{{new A0(), new A0()}, {new A0(), new A0()}};
-        this.list1 = new A1[][]{{new A1(), new A1()}, {new A1(), new A1()}};
+        this.list = new A0[][] { { new A0(), new A0() }, { new A0(), new A0() } };
+        this.list1 = new A1[][] { { new A1(), new A1() }, { new A1(), new A1() } };
     }
 
 }

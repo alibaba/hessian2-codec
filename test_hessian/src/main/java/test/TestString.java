@@ -20,18 +20,25 @@ package test;
 public class TestString {
 
     public static String getEmojiTestString() {
-        // 0x0001_f923
-        String s = "emoji\uD83E\uDD23";
+        int[] emoji_ucs4 = new int[] { 0x0001_f923 };
+        String s = new String(emoji_ucs4, 0, emoji_ucs4.length);
+
+        s += ",max";
 
         // see: http://www.unicode.org/glossary/#code_point
-        int[] ucs4 = new int[]{0x0010_ffff};
-        String maxUnicode = new String(ucs4, 0, ucs4.length);
+        int[] max_unicode_ucs4 = new int[] { 0x0010_ffff };
+        s += new String(max_unicode_ucs4, 0, max_unicode_ucs4.length);
 
-        return s + ",max" + maxUnicode;
+        return s;
     }
 
     public static String getComplexString() {
         String s = "킐\u0088中国你好!\u0088\u0088\u0088\u0088\u0088\u0088";
+        return s;
+    }
+
+    public static String getSuperComplexString() {
+        String s = "킐\u0088中国你好!\u0088\u0088\u0088\u0088\u0088\u0088✅❓☑️😊🤔👀🫅🔒🗝️🧫🛹🚅🧻🪞🪞🪞🪞🪞🪞🪞🪞🪞🕟🕟🕟🕟🕟🕟🕟🔅🔅🔅🔅🔅🔅🤍🤍🤍🤍🤍🤍🌈🌈🌈🌈🌈🌈🏦🏦🏦🏦🏦🏦🚎🚎🚎🚎🚎🚎🚎⏰⏰⏰⏰⏰⏲️⏲️⏲️🗄️abcdefghijklmnopqrstuvwxyz1234567@#$%^&*()_+⏲️⏲️⏲️⏲️🐪🐫c⏰";
         return s;
     }
 }

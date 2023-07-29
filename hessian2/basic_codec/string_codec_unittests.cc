@@ -54,8 +54,39 @@ std::string GenerateString131072() {
   return expect;
 }
 
+std::string GenerateEmojiString() {
+  uint32_t emoji = 0x0001f923;
+  uint32_t max_unicode = 0x0010ffff;
+
+  std::string s;
+
+  // Write the first emoji codepoint as a UTF-8 string.
+  s.push_back(0xf0 | (emoji >> 18));
+  s.push_back(0x80 | ((emoji >> 12) & 0x3f));
+  s.push_back(0x80 | ((emoji >> 6) & 0x3f));
+  s.push_back(0x80 | (emoji & 0x3f));
+
+  s += ",max";
+
+  // Write the max unicode codepoint as a UTF-8 string.
+  s.push_back(0xf0 | (max_unicode >> 18));
+  s.push_back(0x80 | ((max_unicode >> 12) & 0x3f));
+  s.push_back(0x80 | ((max_unicode >> 6) & 0x3f));
+  s.push_back(0x80 | (max_unicode & 0x3f));
+
+  return s;
+}
+
 std::string GenerateComplexString() {
   return "킐\u0088中国你好!\u0088\u0088\u0088\u0088\u0088\u0088";
+}
+
+std::string GenerateSuperComplexString() {
+  return "킐\u0088中国你好!"
+         "\u0088\u0088\u0088\u0088\u0088\u0088✅❓☑️😊🤔👀🫅🔒🗝️🧫🛹🚅🧻🪞🪞🪞🪞"
+         "🪞🪞🪞🪞🪞🕟🕟🕟🕟🕟🕟🕟🔅🔅🔅🔅🔅🔅🤍🤍🤍🤍🤍🤍🌈🌈🌈🌈🌈🌈🏦🏦🏦🏦"
+         "🏦🏦🚎🚎🚎🚎🚎🚎🚎⏰⏰⏰⏰⏰⏲️⏲️⏲️🗄️abcdefghijklmnopqrstuvwxyz1234567@#$"
+         "%^&*()_+⏲️⏲️⏲️⏲️🐪🐫c⏰";
 }
 
 }  // namespace
@@ -104,6 +135,40 @@ TEST(SimpleDecodingAndEncodingTest, SimpleDecodingAndEncodingTest) {
   }
 }
 
+TEST(EmojiDecodingAndEncodingTest, EmojiDecodingAndEncodingTest) {
+  {
+    std::string buffer;
+
+    std::string value = GenerateEmojiString();
+
+    Hessian2::Encoder encoder(buffer);
+
+    encoder.encode(value);
+
+    Hessian2::Decoder decoder(buffer);
+
+    EXPECT_EQ(*decoder.decode<std::string>(), value);
+  }
+}
+
+TEST(ComplexDecodingAndEncodingTest, ComplexDecodingAndEncodingTest) {
+  {
+    std::string buffer;
+
+    std::string value = GenerateComplexString() + GenerateSuperComplexString() +
+                        GenerateString131072() + GenerateSuperComplexString() +
+                        GenerateComplexString() + GenerateSuperComplexString();
+
+    Hessian2::Encoder encoder(buffer);
+
+    encoder.encode(value);
+
+    Hessian2::Decoder decoder(buffer);
+
+    EXPECT_EQ(*decoder.decode<std::string>(), value);
+  }
+}
+
 TEST_F(TestDecoderFramework, DecoderJavaTestCaseForString) {
   { EXPECT_TRUE(Decode<std::string>("replyString_0", std::string())); }
   { EXPECT_TRUE(Decode<std::string>("replyString_1", std::string({'0'}))); }
@@ -131,6 +196,21 @@ TEST_F(TestDecoderFramework, DecoderJavaTestCaseForString) {
   {
     EXPECT_TRUE(Decode<std::string>("customReplyComplexString",
                                     GenerateComplexString()));
+  }
+
+  {
+#ifdef COMPATIBLE_WITH_JAVA_HESSIAN_LITE
+    EXPECT_TRUE(Decode<std::string>("customReplySuperComplexString",
+                                    GenerateSuperComplexString()));
+
+#endif
+  }
+
+  {
+#ifdef COMPATIBLE_WITH_JAVA_HESSIAN_LITE
+    EXPECT_TRUE(
+        Decode<std::string>("customReplyStringEmoji", GenerateEmojiString()));
+#endif
   }
 }
 
@@ -313,6 +393,15 @@ TEST_F(StringCodecTest, Encode) {
                              std::string(32768, 't') + "\x53\x80" +
                              std::string(1, '\0') + std::string(32768, 't');
     encodeSucc(input, 65542, expect_str);
+  }
+
+  {
+    std::string input(u8"🤣🤣🤣");
+#ifdef COMPATIBLE_WITH_JAVA_HESSIAN_LITE
+    encodeSucc(input, 19);  // 1 byte for length, 18 bytes for data.
+#else
+    encodeSucc(input, 13);  // 1 byte for length, 12 bytes for data.
+#endif
   }
 }
 

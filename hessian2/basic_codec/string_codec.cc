@@ -118,6 +118,8 @@ std::pair<int64_t, size_t> getUtf8StringLength(absl::string_view in,
   return {utf8_length, raw_bytes_length};
 }
 
+#ifdef COMPATIBLE_WITH_JAVA_HESSIAN_LITE
+
 /**
  * Rewrite UTF-8 string. Found if there are surrogate pairs in the string and
  * covert them to valid 4 bytes UTF-8 characters from two invalid 3 bytes UTF-8.
@@ -136,7 +138,7 @@ std::string unescapeFourBytesUtf8Char(absl::string_view in) {
     // 6bit of surrogate is 0b110110 or 0b110111. 4bit in the first byte of
     // UTF-8 character and 2bit in the second byte of UTF-8 character.
 
-    if ((char_length == 3) && (index + 6 <= in_size) &&
+    if ((char_length == 3) && (index + 5 < in_size) &&
         (static_cast<uint8_t>(in[index + 0]) == 0xED) &&
         (static_cast<uint8_t>((in[index + 1]) & 0xF0) == 0xA0) &&
         (static_cast<uint8_t>(in[index + 3]) == 0xED) &&
@@ -213,7 +215,7 @@ std::string escapeFourBytesUtf8Char(
     // The value range of 'surrogate_pair' is 0xD800-0xDFFF, it is reserved by
     // Unicode standard for UTF-16 surrogate pair, so it is safe to use it as a
     // flag.
-    static const uint16_t surrogate_pair[2] = {
+    const uint16_t surrogate_pair[2] = {
         // 6bit as the prefix and 10bit as the suffix (0b1101 10xx xxxx xxxx).
         // The value range is 0xD800-0xDBFF.
         static_cast<uint16_t>(0xD800 + (code_point >> 10)),
@@ -248,6 +250,8 @@ std::string escapeFourBytesUtf8Char(
 
   return out;
 }
+
+#endif
 
 // TODO(tianqian.zyf): Do I need to check the UTF-8 validity?
 // Ref: https://www.cl.cam.ac.uk/~mgk25/ucs/utf8_check.c
@@ -396,6 +400,7 @@ std::unique_ptr<std::string> Decoder::decode() {
     return nullptr;
   }
 
+#ifdef COMPATIBLE_WITH_JAVA_HESSIAN_LITE
   if (has_surrogate) {
     std::string new_out = unescapeFourBytesUtf8Char(absl::string_view(*out));
     if (new_out.empty()) {
@@ -404,6 +409,7 @@ std::unique_ptr<std::string> Decoder::decode() {
 
     return std::make_unique<std::string>(std::move(new_out));
   }
+#endif
 
   return out;
 }
@@ -426,6 +432,7 @@ bool Encoder::encode(const absl::string_view &data) {
 
   absl::string_view data_view = data;
 
+#ifdef COMPATIBLE_WITH_JAVA_HESSIAN_LITE
   std::string rewrite_data;
   if (!four_bytes_char_offsets.empty()) {
     rewrite_data = escapeFourBytesUtf8Char(data, four_bytes_char_offsets);
@@ -445,6 +452,7 @@ bool Encoder::encode(const absl::string_view &data) {
   if (length == -1) {
     return false;
   }
+#endif
 
   // Java's 16-bit integers are signed, so the maximum value is 32768
   uint32_t str_offset = 0;
@@ -465,11 +473,14 @@ bool Encoder::encode(const absl::string_view &data) {
     return true;
   }
 
+  const size_t data_view_size = data_view.size();
+
   if (length <= 31) {
     // [x00-x1f] <utf8-data>
     // Compact: short strings
     writer_->writeByte(length);
-    writer_->rawWrite(data_view.substr(str_offset, data.size() - str_offset));
+    writer_->rawWrite(
+        data_view.substr(str_offset, data_view_size - str_offset));
     return true;
   }
 
@@ -479,13 +490,14 @@ bool Encoder::encode(const absl::string_view &data) {
     uint8_t remain = length % 256;
     writer_->writeByte(0x30 + code);
     writer_->writeByte(remain);
-    writer_->rawWrite(data_view.substr(str_offset, data.size() - str_offset));
+    writer_->rawWrite(
+        data_view.substr(str_offset, data_view_size - str_offset));
     return true;
   }
 
   writer_->writeByte(0x53);
   writer_->writeBE<uint16_t>(length);
-  writer_->rawWrite(data_view.substr(str_offset, data.size() - str_offset));
+  writer_->rawWrite(data_view.substr(str_offset, data_view_size - str_offset));
   return true;
 }
 
