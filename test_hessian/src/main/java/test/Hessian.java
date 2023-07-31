@@ -23,7 +23,6 @@ import com.caucho.hessian.test.TestHessian2Servlet;
 
 import java.lang.reflect.Method;
 
-
 public class Hessian {
     public static void main(String[] args) throws Exception {
         if (args.length > 1) {
@@ -63,7 +62,7 @@ public class Hessian {
             output.writeObject(object);
             output.flush();
         } else if (args[0].startsWith("java8_")) {
-            //add java8 java.time Object test
+            // add java8 java.time Object test
             Method method = TestJava8Time.class.getMethod(args[0]);
             Object obj = new Object();
             Object object = method.invoke(obj);
