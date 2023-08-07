@@ -23,9 +23,32 @@ constexpr const char* UntypedListMagicString = "untypedlist";
 constexpr const char* NullMagicString = "null";
 
 template <class T>
-using OptConstRef = absl::optional<std::reference_wrapper<const T>>;
+class OptRef : public absl::optional<std::reference_wrapper<T>> {
+ public:
+  // Inherit absl::optional's constructors.
+  using absl::optional<std::reference_wrapper<T>>::optional;
+
+  // Rewrite operator-> then we can use the OptRef as a pointer and not need
+  // to use the value().get() to get the inner object. Please ensure that the
+  // OptRef has_value() will return true before using operator->.
+  T* operator->() { return &(this->value().get()); }
+  const T* operator->() const { return &(this->value().get()); }
+
+  // To get the pointer of the inner object. If the OptRef has_value() return
+  // false then this method will return nullptr.
+  T* ptr() { return this->has_value() ? &(this->value().get()) : nullptr; }
+  const T* ptr() const {
+    return this->has_value() ? &(this->value().get()) : nullptr;
+  }
+
+  // To get the reference of the inner object. Please ensure that the OptRef
+  // has_value() will return true before using these methods.
+  T& ref() { return this->value().get(); }
+  const T& ref() const { return this->value().get(); }
+};
+
 template <class T>
-using OptRef = absl::optional<std::reference_wrapper<T>>;
+using OptConstRef = OptRef<const T>;
 
 using Binary = std::vector<uint8_t>;
 
