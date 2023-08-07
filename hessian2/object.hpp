@@ -31,7 +31,7 @@ class OptRef : public absl::optional<std::reference_wrapper<T>> {
   // Rewrite operator-> then we can use the OptRef as a pointer and not need
   // to use the value().get() to get the inner object. Please ensure that the
   // OptRef has_value() will return true before using operator->.
-  T* operator->() const { return &(this->value().get()); }
+  T* operator->() { return &(this->value().get()); }
   const T* operator->() const { return &(this->value().get()); }
 
   // To get the pointer of the inner object. If the OptRef has_value() return
