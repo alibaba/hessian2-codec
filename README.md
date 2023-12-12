@@ -269,6 +269,10 @@ contribute to this project.
 
 Happy testing!
 
+## Develop
+
+Generate `compile_commands.json` for this repo by `bazel run :refresh_compile_commands`. Thank https://github.com/hedronvision/bazel-compile-commands-extractor for it provide the great script/tool to make this so easy!
+
 ## License
 hessian2-codec is distributed under Apache License 2.0.
 
