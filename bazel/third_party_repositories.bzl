@@ -38,3 +38,10 @@ def load_third_party_repositories():
         sha256 = "f1907a58d5e86e6c382e51441d92ad9e23aea63827ba47fd647eacc0d3a16c78",
         build_file = "//bazel/external:fmtlib.BUILD",
     )
+
+    http_archive(
+        name = "hedron_compile_commands",
+        url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/dc36e462a2468bd79843fe5176542883b8ce4abe.tar.gz",
+        sha256 = "d63c1573eb1daa4580155a1f0445992878f4aa8c34eb165936b69504a8407662",
+        strip_prefix = "bazel-compile-commands-extractor-dc36e462a2468bd79843fe5176542883b8ce4abe",
+    )
