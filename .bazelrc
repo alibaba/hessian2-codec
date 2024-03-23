@@ -106,3 +106,5 @@ build:coverage --strategy=CoverageReport=local
 build:coverage --experimental_use_llvm_covmap
 build:coverage --collect_code_coverage
 build:coverage --test_tag_filters=-nocoverage
+
+common --enable_bzlmod
