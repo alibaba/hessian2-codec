@@ -268,7 +268,9 @@ bool finalReadUtf8String(std::string &output, bool &has_surrogate,
 
     output.resize(current_pos + length);
     // Read the 'length' bytes from the reader buffer to the output.
-    reader.readNBytes(output.data() + current_pos, length);
+    reader.readNBytes(
+        static_cast<void *>(const_cast<char *>(output.data() + current_pos)),
+        length);
 
     const auto result = getUtf8StringLength(
         absl::string_view(output).substr(current_pos), has_surrogate);
@@ -286,7 +288,9 @@ bool finalReadUtf8String(std::string &output, bool &has_surrogate,
       }
       output.resize(current_pos + raw_bytes_length);
       // Read the 'padding_size' bytes from the reader buffer to the output.
-      reader.readNBytes(output.data() + current_pos + length, padding_size);
+      reader.readNBytes(static_cast<void *>(const_cast<char *>(
+                            output.data() + current_pos + length)),
+                        padding_size);
     }
 
     length -= utf8_length;
