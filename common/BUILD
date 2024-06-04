@@ -33,7 +33,7 @@ cc_library(
     ],
     copts = DEFAULT_COPTS,
     deps = [
-        "@com_github_fmtlib_fmt//:fmtlib",
+        "@com_github_fmtlib_fmt//:fmt",
         "@com_google_absl//absl/strings",
     ],
 )
