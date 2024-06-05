@@ -1,7 +1,4 @@
-module(
-    name = "hessian2-codec",
-    repo_name = "com_alibaba_hessian2_codec",
-)
+module(name = "hessian2-codec")
 
 bazel_dep(
     name = "bazel_skylib",
