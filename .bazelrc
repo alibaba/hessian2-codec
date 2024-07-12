@@ -100,7 +100,8 @@ build:coverage --experimental_generate_llvm_lcov
 build:coverage --collect_code_coverage
 build:coverage --instrumentation_filter="//hessian2[/:]"
 build:coverage --coverage_support=@hessian2-codec//bazel/coverage:coverage_support
-build:coverage --test_env=CC_CODE_COVERAGE_SCRIPT=external/hessian2-codec/bazel/coverage/collect_cc_coverage.sh
+#build:coverage --test_env=CC_CODE_COVERAGE_SCRIPT=external/hessian2-codec/bazel/coverage/collect_cc_coverage.sh
+build:coverage --test_env=CC_CODE_COVERAGE_SCRIPT=external/bazel_tools/tools/test/collect_cc_coverage.sh
 build:coverage --strategy=TestRunner=local
 build:coverage --strategy=CoverageReport=local
 build:coverage --experimental_use_llvm_covmap
