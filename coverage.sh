@@ -34,12 +34,7 @@ mkdir -p ${OUTPUT_DIR}
 
 COVERAGE_DATA="${OUTPUT_DIR}/coverage.dat"
 cp bazel-out/_coverage/_coverage_report.dat "${COVERAGE_DATA}"
-if [[ -f $COVERAGE_DATA ]]; then
-  echo "Coverage data is in ${COVERAGE_DATA}"
-else
-  echo "Coverage data not found in ${COVERAGE_DATA}"
-  exit 1
-fi
+
 echo "Generating report..."
 
 genhtml --title ${PROJECT} --ignore-errors "source" ${COVERAGE_DATA} -o "${OUTPUT_DIR}"
