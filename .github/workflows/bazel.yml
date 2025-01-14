@@ -59,9 +59,10 @@ jobs:
 
       # Upload coverage report to the codecov.
       - name: report
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
           files: ./coverage_report/coverage.dat
           name: codecov-hessian2-codec
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
