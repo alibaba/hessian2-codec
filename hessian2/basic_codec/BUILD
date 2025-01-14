@@ -203,8 +203,6 @@ cc_library(
     srcs = [
         "class_instance_codec.cc",
         "class_instance_codec.hpp",
-        "def_ref_codec.cc",
-        "def_ref_codec.hpp",
         "list_codec.cc",
         "list_codec.hpp",
         "map_codec.cc",
@@ -217,6 +215,7 @@ cc_library(
         ":bool_codec_lib",
         ":byte_codec_lib",
         ":date_codec_lib",
+        ":def_ref_codec_lib",
         ":number_codec_lib",
         ":ref_object_codec_lib",
         ":string_codec_lib",
