@@ -12,7 +12,7 @@ std::unique_ptr<TypedListObject> Decoder::decode() {
   Object::TypedList obj_list;
 
   auto result = std::make_unique<TypedListObject>();
-  values_ref_.push_back(result.get());
+  addValueRef(*result);
 
   auto ret = reader_->read<uint8_t>();
   if (!ret.first) {
@@ -109,7 +109,7 @@ std::unique_ptr<UntypedListObject> Decoder::decode() {
   Object::UntypedList obj_list;
 
   auto result = std::make_unique<UntypedListObject>();
-  values_ref_.push_back(result.get());
+  addValueRef(*result);
 
   auto ret = reader_->read<uint8_t>();
   if (!ret.first) {

@@ -15,13 +15,22 @@ std::unique_ptr<RefObject> Decoder::decode() {
   if (static_cast<uint32_t>(*ref) >= values_ref_.size()) {
     return nullptr;
   }
-  return std::make_unique<RefObject>(values_ref_[*ref]);
+  const auto& target = values_ref_[*ref];
+  // The referenced object was already destroyed, by its owner or because a
+  // map dropped it as a duplicate key.
+  if (target.second.expired()) {
+    return nullptr;
+  }
+  return std::make_unique<RefObject>(target.first, target.second);
 }
 
 template <>
 bool Encoder::encode(const RefObject& value) {
   auto d = value.toRefDest();
-  ABSL_ASSERT(d.has_value());
+  // The referenced object was destroyed.
+  if (!d.has_value()) {
+    return false;
+  }
   auto ref = getValueRef(d.value());
   ABSL_ASSERT(ref != -1);
   writer_->writeByte<uint8_t>(0x51);

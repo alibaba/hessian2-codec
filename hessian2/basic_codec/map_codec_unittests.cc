@@ -166,4 +166,93 @@ TEST_F(TestEncoderFramework, EncoderJavaTestCaseForMap) {
   }
 }
 
+// A map keeps the first of two equal keys and destroys the second one, which
+// already has a reference number. A reference to it fails the decode.
+TEST(MapCodecTest, ReferenceToDroppedDuplicateKeyInUntypedMap) {
+  // H { [] : 0, [] : 0, ref(2) : 0 } Z. Reference 0 is the map, 1 the first
+  // key and 2 the duplicate key.
+  const std::string in("\x48\x78\x90\x78\x90\x51\x92\x90\x5a", 9);
+  Decoder decoder(in);
+  EXPECT_EQ(nullptr, decoder.decode<Object>());
+}
+
+TEST(MapCodecTest, ReferenceToDroppedDuplicateKeyInTypedMap) {
+  // M "T" { [] : 0, [] : 0, ref(2) : 0 } Z.
+  const std::string in("\x4d\x01\x54\x78\x90\x78\x90\x51\x92\x90\x5a", 11);
+  Decoder decoder(in);
+  EXPECT_EQ(nullptr, decoder.decode<Object>());
+}
+
+TEST(MapCodecTest, ReferenceToDroppedDuplicateValue) {
+  // H { 1 : [], 1 : [], 2 : ref(2) } Z. The value of the dropped entry is
+  // reference 2.
+  const std::string in("\x48\x91\x78\x91\x78\x92\x51\x92\x5a", 9);
+  Decoder decoder(in);
+  EXPECT_EQ(nullptr, decoder.decode<Object>());
+}
+
+TEST(MapCodecTest, ReferenceToEarlierValueStillWorks) {
+  // H { 1 : [], 2 : ref(1) } Z.
+  const std::string in("\x48\x91\x78\x92\x51\x91\x5a", 7);
+  Decoder decoder(in);
+  auto output = decoder.decode<Object>();
+  ASSERT_NE(nullptr, output);
+  const auto& map = output->toUntypedMap().value().get();
+  auto it = map.find(ObjectPtr(std::make_unique<IntegerObject>(2)));
+  ASSERT_NE(map.end(), it);
+  ASSERT_EQ(Object::Type::Ref, it->second->type());
+  EXPECT_EQ(Object::Type::UntypedList, it->second->toRefDest().value()->type());
+}
+
+TEST(MapCodecTest, ReferenceToMapBeingDecoded) {
+  // H { 1 : ref(0) } Z.
+  const std::string in("\x48\x91\x51\x90\x5a", 5);
+  Decoder decoder(in);
+  auto output = decoder.decode<Object>();
+  ASSERT_NE(nullptr, output);
+  const auto& map = output->toUntypedMap().value().get();
+  auto it = map.find(ObjectPtr(std::make_unique<IntegerObject>(1)));
+  ASSERT_NE(map.end(), it);
+  EXPECT_EQ(output.get(), it->second->toRefDest().value());
+}
+
+// The caller owns each decoded object and may destroy it before decoding the
+// next one with the same decoder.
+TEST(MapCodecTest, ReferenceToObjectDestroyedByCaller) {
+  // [] then H { ref(0) : 0 } Z.
+  const std::string in("\x78\x48\x51\x90\x90\x5a", 6);
+  Decoder decoder(in);
+  ASSERT_NE(nullptr, decoder.decode<Object>());
+  EXPECT_EQ(nullptr, decoder.decode<Object>());
+}
+
+TEST(MapCodecTest, RefObjectOutlivesItsTarget) {
+  // [] then ref(0).
+  const std::string in("\x78\x51\x90", 3);
+  Decoder decoder(in);
+  auto list = decoder.decode<Object>();
+  ASSERT_NE(nullptr, list);
+  auto ref = decoder.decode<Object>();
+  ASSERT_NE(nullptr, ref);
+  ASSERT_EQ(list.get(), ref->toRefDest().value());
+  list.reset();
+  EXPECT_FALSE(ref->toRefDest().has_value());
+  EXPECT_EQ(0, ref->hash());
+  EXPECT_EQ("Type: Ref, target destroyed", ref->toDebugString());
+}
+
+TEST(MapCodecTest, EncodeRefObjectWhoseTargetIsDestroyed) {
+  // [] then ref(0).
+  const std::string in("\x78\x51\x90", 3);
+  Decoder decoder(in);
+  auto list = decoder.decode<Object>();
+  ASSERT_NE(nullptr, list);
+  auto ref = decoder.decode<Object>();
+  ASSERT_NE(nullptr, ref);
+  list.reset();
+  std::string out;
+  Encoder encoder(out);
+  EXPECT_FALSE(encoder.encode<Object>(*ref));
+}
+
 }  // namespace Hessian2

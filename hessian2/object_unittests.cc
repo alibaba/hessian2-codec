@@ -416,4 +416,18 @@ TEST(ObjectTest, Iterator) {
   EXPECT_EQ(const_actual, const_b.toString().value().get());
 }
 
+// A copy has its own lifetime, so a reference to the original does not stay
+// valid through the copy.
+TEST(ObjectTest, LifetimeIsNotShared) {
+  auto original = std::make_unique<IntegerObject>(1);
+  auto lifetime = original->lifetime();
+  IntegerObject copy(*original);
+  IntegerObject assigned(2);
+  assigned = *original;
+  original.reset();
+  EXPECT_TRUE(lifetime.expired());
+  EXPECT_FALSE(copy.lifetime().expired());
+  EXPECT_FALSE(assigned.lifetime().expired());
+}
+
 }  // namespace Hessian2

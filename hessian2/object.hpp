@@ -259,6 +259,10 @@ class Object {
   };
 
   Object() = default;
+  // The lifetime token belongs to this object, so a copy or a moved-to object
+  // gets its own.
+  Object(const Object&) : lifetime_() {}
+  Object& operator=(const Object&) { return *this; }
   virtual ~Object() = default;
 
   template <typename T>
@@ -295,6 +299,18 @@ class Object {
 
   bool operator==(const Object& other) const { return equal(other); }
   bool operator!=(const Object& other) const { return !equal(other); }
+
+  // Expires when this object is destroyed. A RefObject created by the decoder
+  // holds it, so it never reaches an object that no longer exists.
+  std::weak_ptr<const void> lifetime() {
+    if (lifetime_ == nullptr) {
+      lifetime_ = std::make_shared<char>();
+    }
+    return lifetime_;
+  }
+
+ private:
+  std::shared_ptr<const void> lifetime_;
 };
 
 #define GENERATE_STD_HASH(DataType) \
@@ -337,21 +353,49 @@ class RefObject : public Object {
   // We need to make sure that the object that the RefObject points to has a
   // longer lifetime than the RefObject
   RefObject(Object* data) : data_(data) {}
+  // The RefObject no longer resolves to data once data is destroyed. Two
+  // RefObjects whose targets were destroyed are equal and hash to 0.
+  RefObject(Object* data, std::weak_ptr<const void> target_lifetime)
+      : data_(data),
+        target_lifetime_(std::move(target_lifetime)),
+        tracked_(true) {}
 
   // Object.
   Type type() const override { return Type::Ref; }
-  absl::optional<Object*> toRefDest() const override { return data_; }
-  bool equal(const Object& o) const override {
-    return o.type() == Type::Ref && o.toRefDest() == data_;
+  absl::optional<Object*> toRefDest() const override {
+    Object* data = target();
+    if (data == nullptr) {
+      return absl::nullopt;
+    }
+    return data;
   }
-  size_t hash() const override { return data_->hash(); }
+  bool equal(const Object& o) const override {
+    return o.type() == Type::Ref && o.toRefDest() == toRefDest();
+  }
+  size_t hash() const override {
+    Object* data = target();
+    return data == nullptr ? 0 : data->hash();
+  }
   std::string toDebugString() const override {
-    return absl::StrFormat("Type: Ref, target address: %p, value[%s]", data_,
-                           data_->toDebugString());
+    Object* data = target();
+    if (data == nullptr) {
+      return "Type: Ref, target destroyed";
+    }
+    return absl::StrFormat("Type: Ref, target address: %p, value[%s]", data,
+                           data->toDebugString());
   }
 
  private:
+  Object* target() const {
+    if (tracked_ && target_lifetime_.expired()) {
+      return nullptr;
+    }
+    return data_;
+  }
+
   Object* data_;
+  std::weak_ptr<const void> target_lifetime_;
+  bool tracked_{false};
 };
 
 class BooleanObject : public Object {

@@ -85,8 +85,12 @@ class Decoder {
   ReaderPtr reader_;
   std::vector<std::string> types_ref_;
   std::vector<Object::RawDefinitionSharedPtr> def_ref_;
-  // decode's objects need to have a lifetime longer than value_ref_
-  std::vector<Object*> values_ref_;
+  // Makes o the target of the next value reference. The decoded objects belong
+  // to the caller and may be destroyed before the decoder, so each reference
+  // keeps a token that expires with its object.
+  void addValueRef(Object& o) { values_ref_.emplace_back(&o, o.lifetime()); }
+
+  std::vector<std::pair<Object*, std::weak_ptr<const void>>> values_ref_;
   ErrorCode error_code_{ErrorCode::NO_DECODE_ERROR};
   int error_pos_{0};
 
